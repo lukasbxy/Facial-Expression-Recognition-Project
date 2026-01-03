@@ -1,4 +1,14 @@
-dataset/dataset_full/
+# Ignore all images in dataset_full, but keep folder structure
+dataset/dataset_full/training_set/*/*.jpg
+dataset/dataset_full/training_set/*/*.png
+dataset/dataset_full/training_set/*/*.jpeg
+dataset/dataset_full/validation_set/*/*.jpg
+dataset/dataset_full/validation_set/*/*.png
+dataset/dataset_full/validation_set/*/*.jpeg
+
+# Python
 *.pyc
 __pycache__/
+
+# System files
 .DS_Store
