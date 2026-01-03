@@ -53,3 +53,30 @@ dataset/
 ```
 
 **Note:** Only `dataset_sample` images are included in the repository. The `dataset_full` folder structure is preserved with `.gitkeep` files, but images must be downloaded separately.
+
+## Training Quick Start
+
+### Loading Data
+
+```python
+from training.load_data import get_dataloaders
+
+# Dataset laden ('sample' oder 'full')
+train_loader, val_loader = get_dataloaders(dataset='sample', batch_size=32)
+
+# Start training
+for images, labels in train_loader:
+    # images: Tensor [batch_size, 3, 64, 64]
+    # labels: Tensor [batch_size]
+    pass
+```
+
+### Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `dataset` | `'sample'` | 'sample' für Tests, 'full' für Training |
+| `batch_size` | 32 | Bilder pro Batch |
+| `num_workers` | 4 | CPU-Kerne für das Laden |
+
+Das war's - keine komplizierte Dataset-Integration nötig.

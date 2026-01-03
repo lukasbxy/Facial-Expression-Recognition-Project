@@ -1,0 +1,16 @@
+# DATASET CONFIGURATION
+# Pfade zu den Datasets
+dataset:
+  # Vollständiges Dataset
+  full:
+    train: ./dataset/dataset_full/training_set
+    val: ./dataset/dataset_full/validation_set
+  
+  # Sample Dataset für schnelle Tests
+  sample:
+    train: ./dataset/dataset_sample/training_set
+    val: ./dataset/dataset_sample/validation_set
+
+# Bild-Spezifikationen
+image:
+  size: 64
