@@ -4,9 +4,21 @@ Dataset Loading Utility für Facial Expression Recognition
 Das Modul stellt eine Funktion bereit, um die Datasets 
 automatisch als PyTorch DataLoader zu laden.
 
+WICHTIG: Die Trainingsdaten werden automatisch mit Data Augmentation geladen:
+- Random Resized Crop (90-100%)
+- Random Rotation (±10°)
+- Random Horizontal Flip (50%)
+- Color Jitter (Helligkeit, Kontrast, Sättigung)
+- Random Erasing (Cutout)
+
+Die Validierungsdaten werden NICHT augmentiert für faire Evaluation.
+
 Verwendung:
     from training.load_data import get_dataloaders
     train_loader, val_loader = get_dataloaders(dataset='sample')
+    
+Konfiguration:
+    Alle Augmentation-Parameter sind in config.yaml konfigurierbar.
 """
 
 import os
@@ -30,15 +42,78 @@ def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path=
     if not os.path.exists(train_path) or not os.path.exists(val_path):
         raise FileNotFoundError(f"Dataset-Pfade nicht gefunden. Bitte config.yaml prüfen.")
     
-    # Standard-Transformationen
-    transform = transforms.Compose([
+    
+    # ===================================================================
+    # DATA AUGMENTATION - Training Transforms
+    # ===================================================================
+    # Diese Transformationen werden NUR auf die Trainingsdaten angewendet,
+    # um die Datenmenge künstlich zu vergrößern und das Modell robuster
+    # gegen Variationen zu machen.
+    # ===================================================================
+    
+    aug_config = config.get('augmentation', {})
+    
+    train_transform = transforms.Compose([
+        # 1. Random Resized Crop: Zufälliger Ausschnitt (90-100%)
+        #    -> Simuliert unterschiedliche Zoom-Level und Gesichtspositionierungen
+        transforms.RandomResizedCrop(
+            size=img_size,
+            scale=(aug_config.get('crop_scale_min', 0.9), 
+                   aug_config.get('crop_scale_max', 1.0))
+        ),
+        
+        # 2. Random Rotation: ±10 Grad
+        #    -> Simuliert leicht gedrehte Köpfe/Kamerapositionen
+        transforms.RandomRotation(
+            degrees=aug_config.get('rotation_degrees', 10)
+        ),
+        
+        # 3. Random Horizontal Flip: 50% Wahrscheinlichkeit
+        #    -> Spiegelt Gesichter links/rechts (wichtig für Symmetrie-Invarianz)
+        #    -> NICHT vertikal, da umgedrehte Gesichter unrealistisch sind
+        transforms.RandomHorizontalFlip(
+            p=aug_config.get('horizontal_flip_prob', 0.5)
+        ),
+        
+        # 4. Color Jitter: Helligkeit, Kontrast, Sättigung variieren
+        #    -> Simuliert unterschiedliche Lichtverhältnisse und Kameraeinstellungen
+        transforms.ColorJitter(
+            brightness=aug_config.get('brightness', 0.2),
+            contrast=aug_config.get('contrast', 0.2),
+            saturation=aug_config.get('saturation', 0.1)
+        ),
+        
+        # 5. To Tensor: Konvertiert PIL Image zu PyTorch Tensor
+        #    -> Normalisiert Pixelwerte auf [0, 1]
+        transforms.ToTensor(),
+        
+        # 6. Random Erasing: Kleine Bereiche zufällig ausradieren (Cutout)
+        #    -> Macht das Modell robust gegen Verdeckungen (z.B. Haare, Hände)
+        #    -> Wird NACH ToTensor angewendet (arbeitet auf Tensoren)
+        transforms.RandomErasing(
+            p=aug_config.get('erase_prob', 0.3),
+            scale=(aug_config.get('erase_scale_min', 0.02), 
+                   aug_config.get('erase_scale_max', 0.10)),
+            ratio=(0.3, 3.3)  # Seitenverhältnis der ausradierten Bereiche
+        ),
+    ])
+    
+    # ===================================================================
+    # VALIDATION Transforms - KEINE Augmentation!
+    # ===================================================================
+    # Validierungsdaten werden NICHT augmentiert, um eine faire und
+    # konsistente Evaluation zu gewährleisten.
+    # ===================================================================
+    
+    val_transform = transforms.Compose([
         transforms.Resize((img_size, img_size)),
         transforms.ToTensor(),
     ])
     
-    # Datasets laden
-    train_dataset = datasets.ImageFolder(root=train_path, transform=transform)
-    val_dataset = datasets.ImageFolder(root=val_path, transform=transform)
+    
+    # Datasets mit entsprechenden Transforms laden
+    train_dataset = datasets.ImageFolder(root=train_path, transform=train_transform)
+    val_dataset = datasets.ImageFolder(root=val_path, transform=val_transform)
     
     # DataLoader erstellen
     train_loader = DataLoader(

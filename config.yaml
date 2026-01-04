@@ -14,3 +14,26 @@ dataset:
 # Bild-Spezifikationen
 image:
   size: 64
+
+# Data Augmentation Configuration
+# Diese Augmentationen werden NUR beim Training angewendet (nicht bei der Validation)
+augmentation:
+  # Rotation: Bilder um +-10° drehen (simuliert leicht gedrehte Köpfe)
+  rotation_degrees: 10
+  
+  # Horizontal Flip: 50% Wahrscheinlichkeit für Links/Rechts-Spiegelung
+  horizontal_flip_prob: 0.5
+  
+  # Random Resized Crop: Zufälliger Ausschnitt 90-100% (simuliert verschiedene Zoom-Level)
+  crop_scale_min: 0.9
+  crop_scale_max: 1.0
+  
+  # Color Jitter: Helligkeit und Kontrast leicht variieren
+  brightness: 0.1
+  contrast: 0.1
+  saturation: 0.1
+  
+  # Random Erasing: Kleine Bereiche ausradieren (simuliert Verdeckungen)
+  erase_prob: 0.3
+  erase_scale_min: 0.02
+  erase_scale_max: 0.10

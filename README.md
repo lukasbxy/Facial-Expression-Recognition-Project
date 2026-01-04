@@ -34,6 +34,17 @@ The goal of this project is to develop a deep learning system that automatically
 | Framework         | PyTorch                          |
 | Emotion Classes   | 6 (see above)                    |
 
+## Data Augmentation
+
+Training data is augmented with these techniques:
+- Random Resized Crop (90-100%)
+- Random Rotation (±10°)
+- Random Horizontal Flip (50%)
+- Color Jitter (Brightness, Contrast, Saturation)
+- Random Erasing (2-10% of image)
+
+All parameters are configured in `config.yaml`.
+
 ## Dataset Structure
 
 ```
