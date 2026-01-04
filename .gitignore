@@ -12,3 +12,6 @@ __pycache__/
 
 # System files
 .DS_Store
+
+# Ignore virtual environment
+myenv
