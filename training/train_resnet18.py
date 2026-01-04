@@ -1,7 +1,7 @@
 """
 Implementierung eines Training-Loops für ResNet-18 (models/ResNet-18)
 """
-
+from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -13,10 +13,11 @@ from training.load_data import get_dataloaders
 
 class ResNetTrainer:
     
-    def __init__(self, num_epochs: int = 10, learning_rate: float = 0.001, weight_decay: float = 0.0001):
+    def __init__(self, filepath: Path, num_epochs: int = 10, learning_rate: float = 0.001, weight_decay: float = 0.0001):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
+        self.filepath = filepath
         
         # Set Device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -96,12 +97,26 @@ class ResNetTrainer:
         loss_avg = loss_total / len(self.val_loader)
         accuracy = 100 * correct / total
         return loss_avg, accuracy
-                
+    
+    
+    def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state": model.state_dict(),
+                "optim_state": optimizer.state_dict(),
+                "best_val_acc": best_val_acc,
+            },
+            path,
+        )            
+
 
     def train(self):
         """Main training loop"""
         print(f"Beginning training for {self.num_epochs} epochs.")
         print(60*"-")
+        
+        best_val_acc = -1.0
         
         for epoch in range(self.num_epochs):
             print(f"\nEpoch {epoch+1}/{self.num_epochs}")
@@ -111,11 +126,21 @@ class ResNetTrainer:
             
             print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
             print(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
-        
+            
+            # Store best model
+            if val_accuracy > best_val_acc:
+                best_val_acc = val_accuracy
+                self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
+                print(f"Saved Model to {self.filepath}")
+                
         print("\n" + "=" * 60)
         print("Training complete.")
         
+        
 if __name__ == "__main__":
     # Test Training
-    trainer = ResNetTrainer()
+    dir =  Path("models") / "ResNet18" / "checkpoints"
+    dir.mkdir(parents=True, exist_ok=True)
+    chk_path = dir / "best.pt"
+    trainer = ResNetTrainer(chk_path)
     trainer.train()
