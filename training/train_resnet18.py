@@ -1,5 +1,7 @@
 """
 Implementierung eines Training-Loops für ResNet-18 (models/ResNet-18)
+
+Beispielhafte Implementierung siehe Ende der Datei.
 """
 from pathlib import Path
 import torch
@@ -13,7 +15,11 @@ from training.load_data import get_dataloaders
 
 class ResNetTrainer:
     
-    def __init__(self, filepath: Path, num_epochs: int = 10, learning_rate: float = 0.001, weight_decay: float = 0.0001):
+    def __init__(self, 
+                 filepath: Path, # Filepath to save best model / checkpoints to
+                 num_epochs: int = 10, 
+                 learning_rate: float = 0.001, 
+                 weight_decay: float = 0.0001):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -116,6 +122,7 @@ class ResNetTrainer:
         print(f"Beginning training for {self.num_epochs} epochs.")
         print(60*"-")
         
+        # Store best accuracy during run to determine when to save model.
         best_val_acc = -1.0
         
         for epoch in range(self.num_epochs):
@@ -139,6 +146,7 @@ class ResNetTrainer:
         
 if __name__ == "__main__":
     # Test Training
+    # Save best model to checkpoint folder
     dir =  Path("models") / "ResNet18" / "checkpoints"
     dir.mkdir(parents=True, exist_ok=True)
     chk_path = dir / "best.pt"
