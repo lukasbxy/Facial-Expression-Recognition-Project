@@ -3,5 +3,6 @@
 torch==2.9.1
 torchvision
 torchaudio
+numpy
 PyYAML  # Für config.yaml Laden
 tqdm==4.67.1
