@@ -4,3 +4,4 @@ torch==2.9.1
 torchvision
 torchaudio
 PyYAML  # Für config.yaml Laden
+tqdm==4.67.1

@@ -12,3 +12,11 @@ __pycache__/
 
 # System files
 .DS_Store
+
+# Ignore virtual environment
+myenv
+venv
+
+# Ignore Checkpoints
+models/ResNet18/checkpoints
+models/CCT/checkpoints
