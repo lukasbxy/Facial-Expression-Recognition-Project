@@ -7,7 +7,6 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt 
@@ -20,7 +19,7 @@ class ResNetTrainer:
     
     def __init__(self, 
                  filepath: Path, # Filepath to save best model / checkpoints to
-                 num_epochs: int = 10, 
+                 num_epochs: int = 3, 
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
                  cm_every: int = 5):
@@ -31,7 +30,12 @@ class ResNetTrainer:
         self.cm_every = cm_every
         
         # Set Device
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if torch.cuda.is_available():
+            self.device = torch.device('cuda')
+        elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            self.device = torch.device('mps')
+        else:
+            self.device = torch.device('cpu')
         print(f"Using Device: {self.device}")
         
         # Model
