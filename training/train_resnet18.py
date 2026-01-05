@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from models import ResNet18
 from training.load_data import get_dataloaders
+from training.early_stopping import EarlyStopping
 
 class ResNetTrainer:
     
@@ -125,6 +126,9 @@ class ResNetTrainer:
         # Store best accuracy during run to determine when to save model.
         best_val_acc = -1.0
         
+        # Initialize Early Stopping
+        early_stopping = EarlyStopping(patience=5, min_delta=0.001, mode='max')
+        
         for epoch in range(self.num_epochs):
             print(f"\nEpoch {epoch+1}/{self.num_epochs}")
             
@@ -139,6 +143,15 @@ class ResNetTrainer:
                 best_val_acc = val_accuracy
                 self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
                 print(f"Saved Model to {self.filepath}")
+            
+            # Check Early Stopping
+            if early_stopping.check(val_accuracy):
+                print(f"\n{'='*60}")
+                print(f"Early stopping triggered after {epoch+1} epochs.")
+                print(f"No improvement in validation accuracy for {early_stopping.patience} epochs.")
+                print(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
+                print(f"{'='*60}")
+                break
                 
         print("\n" + "=" * 60)
         print("Training complete.")
