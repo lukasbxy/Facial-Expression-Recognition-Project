@@ -45,7 +45,17 @@ class ResNetTrainer:
         self.optimizer = optim.Adam(
             self.model.parameters(),
             lr = self.learning_rate,
-            weight_decay = self.weight_decay)
+            weight_decay = self.weight_decay
+        )
+        
+        # Scheduler
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            self.optimizer,
+            mode="min",        
+            factor=0.5,        
+            patience=3,       
+            threshold=0.001,   
+        )
         
         self.criterion = nn.CrossEntropyLoss()
         
@@ -80,7 +90,7 @@ class ResNetTrainer:
             
             loss_total += loss.item() * labels.size(0)
             
-        loss_avg = loss_total / len(self.train_loader)
+        loss_avg = loss_total / total
         accuracy = 100 * correct / total
         return loss_avg, accuracy
     
@@ -105,7 +115,7 @@ class ResNetTrainer:
                 correct += (predicted == labels).sum().item()
                 loss_total += loss.item() * labels.size(0)
             
-        loss_avg = loss_total / len(self.val_loader)
+        loss_avg = loss_total / total
         accuracy = 100 * correct / total
         return loss_avg, accuracy
     
@@ -141,6 +151,9 @@ class ResNetTrainer:
             
             print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
             print(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
+            current_lr = self.optimizer.param_groups[0]["lr"]
+            print(f"LR: {current_lr:.6f}")
+            self.scheduler.step(val_loss)
             
             # Store best model
             if val_accuracy > best_val_acc:
