@@ -23,11 +23,13 @@ Konfiguration:
 
 import os
 import yaml
-from torch.utils.data import DataLoader
+import torch
+import numpy as np
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from torchvision import datasets, transforms
 
 
-def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path='config.yaml'):
+def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path='config.yaml', use_sampler = True):
     """
     Erstellt Training- und Validation-DataLoader basierend auf der Konfiguration.
     """
@@ -114,12 +116,24 @@ def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path=
     # Datasets mit entsprechenden Transforms laden
     train_dataset = datasets.ImageFolder(root=train_path, transform=train_transform)
     val_dataset = datasets.ImageFolder(root=val_path, transform=val_transform)
+
+    # Sampler erstellen 
+    targets = np.array(train_dataset.targets)
+    class_counts = np.bincount(targets)
+    class_weights = 1.0 / np.sqrt(class_counts)
+    sample_weights = class_weights[targets]
+    train_sampler = WeightedRandomSampler(
+        weights = torch.as_tensor(sample_weights, dtype = torch.double),
+        num_samples = len(train_dataset),
+        replacement = True
+    )
     
     # DataLoader erstellen
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        sampler = train_sampler if use_sampler else None,
+        shuffle= not use_sampler,
         num_workers=num_workers,
         pin_memory=True
     )
