@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt 
 
 from models import ResNet18
 from training.load_data import get_dataloaders
@@ -20,11 +22,13 @@ class ResNetTrainer:
                  filepath: Path, # Filepath to save best model / checkpoints to
                  num_epochs: int = 10, 
                  learning_rate: float = 0.001, 
-                 weight_decay: float = 0.0001):
+                 weight_decay: float = 0.0001,
+                 cm_every: int = 5):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.filepath = filepath
+        self.cm_every = cm_every
         
         # Set Device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -81,11 +85,16 @@ class ResNetTrainer:
         return loss_avg, accuracy
     
     
-    def validate(self):
+    def validate(self, epoch):
         """Validate module on validation data"""
         self.model.eval()
         
         loss_total, correct, total = 0.0, 0, 0
+
+        do_cm = (self.cm_every > 0) and ((epoch+1) % self.cm_every == 0) 
+
+        all_preds = [] 
+        all_labels = []
         
         with torch.no_grad():
             for images, labels in tqdm(self.val_loader, desc = "Validating"):
@@ -100,6 +109,34 @@ class ResNetTrainer:
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
                 loss_total += loss.item() * labels.size(0)
+
+                # Append predictions and labels 
+                if do_cm:
+                    all_preds.append(predicted.detach().cpu())
+                    all_labels.append(labels.detach().cpu())
+        if do_cm:
+            all_preds = torch.cat(all_preds).numpy()
+            all_labels = torch.cat(all_labels).numpy()
+            cm = confusion_matrix(all_labels, all_preds, normalize ="true")
+            class_names = self.val_loader.dataset.classes
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm,display_labels=class_names)
+            fig, axs = plt.subplots(figsize = (8,8))
+            disp.plot(
+                ax=axs,
+                cmap="Blues",
+                values_format=".2f",
+                xticks_rotation=45,
+                colorbar=True,
+            )
+            axs.set_title(f"Confusion matrix at Epoch {epoch + 1}")
+            fig.tight_layout()
+            repo_root = Path(__file__).resolve().parents[1]
+            out_dir = repo_root /"model_metrics" / "confusion_matrices"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            out_path = out_dir / f"confusion_matrix_epoch_{epoch+1:03d}.png"
+            fig.savefig(out_path, dpi=200)
+            plt.close(fig)
+            print("confusion matrix saved in model_metrics/confusion_matrices")
             
         loss_avg = loss_total / len(self.val_loader)
         accuracy = 100 * correct / total
@@ -133,7 +170,7 @@ class ResNetTrainer:
             print(f"\nEpoch {epoch+1}/{self.num_epochs}")
             
             train_loss, train_accuracy = self.train_one_epoch()
-            val_loss, val_accuracy = self.validate()
+            val_loss, val_accuracy = self.validate(epoch)
             
             print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
             print(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
