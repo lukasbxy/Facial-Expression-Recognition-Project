@@ -80,7 +80,7 @@ class ResNetTrainer:
             
             loss_total += loss.item() * labels.size(0)
             
-        loss_avg = loss_total / len(self.train_loader)
+        loss_avg = loss_total / total
         accuracy = 100 * correct / total
         return loss_avg, accuracy
     
@@ -105,7 +105,7 @@ class ResNetTrainer:
                 correct += (predicted == labels).sum().item()
                 loss_total += loss.item() * labels.size(0)
             
-        loss_avg = loss_total / len(self.val_loader)
+        loss_avg = loss_total / total
         accuracy = 100 * correct / total
         return loss_avg, accuracy
     
