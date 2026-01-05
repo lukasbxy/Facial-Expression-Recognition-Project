@@ -9,6 +9,9 @@ Erwartete Eingabe:
     Tensor mit Shape (BATCH_SIZE, 3, H, W) — Standardmäßig RGB-Bilder.
     Das Modell ist für variable Bildgrößen ausgelegt; in diesem Projekt
     werden typischerweise 64x64 Bilder verwendet.
+    
+Ausgabe:
+    Tensor mit Shape (BATCH_SIZE, 6) — Logits für 6 Emotionsklassen:
 """
 
 import torch.nn as nn
