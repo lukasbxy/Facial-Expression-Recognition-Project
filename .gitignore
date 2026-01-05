@@ -20,3 +20,6 @@ venv
 # Ignore Checkpoints
 models/ResNet18/checkpoints
 models/CCT/checkpoints
+
+#Ignore confusion matrices 
+model_metrics/confusion_matrices

@@ -4,5 +4,7 @@ torch==2.9.1
 torchvision
 torchaudio
 numpy
+scikit-learn
+matplotlib
 PyYAML  # Für config.yaml Laden
 tqdm==4.67.1
