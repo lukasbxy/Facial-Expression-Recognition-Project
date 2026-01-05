@@ -73,6 +73,48 @@ class Tokenizer(nn.Module):
     def forward(self, x):
         return self.flattener(self.conv_layers(x)).transpose(-2, -1)
 
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    if drop_prob == 0. or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1) 
+    random_tensor = keep_prob + torch.rand(shape, dtype=x.dtype, device=x.device)
+    random_tensor.floor_()  # binarize
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+class DropPath(nn.Module):
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+    
+
+    def forward(self, x):
+        return drop_path(x, self.drop_prob, self.training)
+
+class CCTBlock(nn.Module):
+    def __init__(self, dim, heads, mlp_ratio, dropout, last_drop_path):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(dim)
+        self.attn = nn.MultiheadAttention(dim, heads, dropout=dropout, batch_first=True)
+        self.drop_path = DropPath(last_drop_path) if last_drop_path > 0. else nn.Identity()
+        
+        self.norm2 = nn.LayerNorm(dim)
+        self.mlp = nn.Sequential(
+            nn.Linear(dim, int(dim * mlp_ratio)),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(int(dim * mlp_ratio), dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x):
+        # Attention with Stochastic Depth
+        x = x + self.drop_path(self.attn(self.norm1(x), self.norm1(x), self.norm1(x))[0])
+        # MLP with Stochastic Depth
+        x = x + self.drop_path(self.mlp(self.norm2(x)))
+        return x
+
 class TransformerClassifier(nn.Module):
     def __init__(self,
                  seq_pool=True,
@@ -121,10 +163,9 @@ class TransformerClassifier(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
         dpr = [x.item() for x in torch.linspace(0, stochastic_depth, num_layers)]
         self.blocks = nn.ModuleList([
-            nn.TransformerEncoderLayer(d_model=embedding_dim, nhead=num_heads,
-                                    dim_feedforward=dim_feedforward, dropout=dropout,
-                                    batch_first=True)
-            for i in range(num_layers)])
+                    CCTBlock(dim=embedding_dim, heads=num_heads, mlp_ratio=mlp_ratio, 
+                    dropout=dropout, last_drop_path=dpr[i])
+                for i in range(num_layers)])       
         self.norm = nn.LayerNorm(embedding_dim)
 
         self.fc = nn.Linear(embedding_dim, num_classes)
@@ -230,4 +271,3 @@ class CCT(nn.Module):
     def forward(self, x):
         x = self.tokenizer(x)
         return self.classifier(x)
-
