@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from models.ResNet18.ResNet18 import ResNet18
+from models import ResNet18
 from training.load_data import get_dataloaders
 
 class ResNetTrainer:
