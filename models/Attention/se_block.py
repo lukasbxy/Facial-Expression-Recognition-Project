@@ -1,3 +1,17 @@
+'''
+Implementation:
+from models.attention.se_block import SEBlock 
+...
+in class BasicBlock __init__:
+self.se = SEBlock(out_channels)
+
+in class BasicBlock forward:
+BEFORE shortcut:
+out = self.se(out)
+
+'''
+
+
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F 
