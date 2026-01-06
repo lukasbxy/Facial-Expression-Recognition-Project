@@ -42,6 +42,9 @@ class ResNetTrainer:
         self.model = ResNet18()
         self.model = self.model.to(self.device)
         
+        self.use_amp = self.device.type == "cuda"
+        self.scaler = torch.amp.GradScaler(device = "cuda", enabled = self.use_amp)
+        
         # Dataloaders
         self.train_loader, self.val_loader = get_dataloaders()
         
@@ -57,7 +60,7 @@ class ResNetTrainer:
             self.optimizer,
             mode="min",        
             factor=0.5,        
-            patience=3,       
+            patience=2,       
             threshold=0.001,   
         )
         
@@ -82,11 +85,17 @@ class ResNetTrainer:
             
             self.optimizer.zero_grad(set_to_none=True)
             
-            outputs = self.model(images)
-            loss = self.criterion(outputs, labels)
+            with torch.autocast(device_type="cuda", enabled=self.use_amp):
+                outputs = self.model(images)
+                loss = self.criterion(outputs, labels)
             
-            loss.backward()
-            self.optimizer.step()
+            if self.use_amp:
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                loss.backward()
+                self.optimizer.step()
             
             predicted = outputs.argmax(dim = 1)
             total += labels.size(0)
@@ -132,7 +141,7 @@ class ResNetTrainer:
             all_preds = torch.cat(all_preds).numpy()
             all_labels = torch.cat(all_labels).numpy()
             cm = confusion_matrix(all_labels, all_preds, normalize ="true")
-            class_names = self.val_loader.dataset.classes
+            class_names = self.val_loader.dataset.classes # type: ignore
             disp = ConfusionMatrixDisplay(confusion_matrix=cm,display_labels=class_names)
             fig, axs = plt.subplots(figsize = (8,8))
             disp.plot(
