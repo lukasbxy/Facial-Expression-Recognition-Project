@@ -11,7 +11,7 @@ from tqdm import tqdm
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt 
 
-from models import ResNet18
+from models.Modified_ResNet18 import ResNet18
 from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
 
@@ -54,7 +54,7 @@ class ResNetTrainer:
             lr = self.learning_rate,
             weight_decay = self.weight_decay)
         
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
         
         print("Trainer initialized.")
         
