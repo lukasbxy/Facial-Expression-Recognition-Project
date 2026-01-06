@@ -23,3 +23,6 @@ models/CCT/checkpoints
 
 #Ignore confusion matrices 
 model_metrics/confusion_matrices
+
+# Ignore logs
+logs/

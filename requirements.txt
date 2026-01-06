@@ -8,3 +8,6 @@ scikit-learn
 matplotlib
 PyYAML  # Für config.yaml Laden
 tqdm==4.67.1
+opencv-python  # Für Video/Webcam Verarbeitung in der Demo
+Pillow  # Für Bildkonvertierung in tkinter
+customtkinter  # Für moderne GUI mit Dark Mode
