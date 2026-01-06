@@ -41,6 +41,9 @@ class ResNetTrainer:
         self.model = ResNet18()
         self.model = self.model.to(self.device)
         
+        self.use_amp = self.device.type == "cuda"
+        self.scaler = torch.amp.GradScaler(device = self.device.type, enabled = self.use_amp) # type: ignore
+        
         # Dataloaders
         self.train_loader, self.val_loader = get_dataloaders()
         
@@ -71,11 +74,17 @@ class ResNetTrainer:
             
             self.optimizer.zero_grad(set_to_none=True)
             
-            outputs = self.model(images)
-            loss = self.criterion(outputs, labels)
-            
-            loss.backward()
-            self.optimizer.step()
+            with torch.autocast(device_type="cuda", enabled=self.use_amp):
+                outputs = self.model(images)
+                loss = self.criterion(outputs, labels)
+                
+            if self.use_amp:
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                loss.backward()
+                self.optimizer.step()
             
             predicted = outputs.argmax(dim = 1)
             total += labels.size(0)
