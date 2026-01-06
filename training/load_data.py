@@ -120,10 +120,10 @@ def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path=
     # Sampler erstellen 
     targets = np.array(train_dataset.targets)
     class_counts = np.bincount(targets)
-    class_weights = 1.0 / np.sqrt(class_counts)
+    class_weights = 1.0 / (class_counts**0.75)
     sample_weights = class_weights[targets]
     train_sampler = WeightedRandomSampler(
-        weights = torch.as_tensor(sample_weights, dtype = torch.double),
+        weights = torch.as_tensor(sample_weights, dtype = torch.double), # type: ignore
         num_samples = len(train_dataset),
         replacement = True
     )

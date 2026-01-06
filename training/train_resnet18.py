@@ -20,8 +20,8 @@ class ResNetTrainer:
     def __init__(self, 
                  filepath: Path, # Filepath to save best model / checkpoints to
                  num_epochs: int = 3, 
-                 learning_rate: float = 0.001, 
-                 weight_decay: float = 0.0001,
+                 learning_rate: float = 3e-4, 
+                 weight_decay: float = 1e-2,
                  cm_every: int = 5):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
@@ -48,8 +48,19 @@ class ResNetTrainer:
         # Dataloaders
         self.train_loader, self.val_loader = get_dataloaders()
         
+        # Scheduler
+        self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            self.optimizer,
+            max_lr=3e-4,
+            epochs=num_epochs,
+            steps_per_epoch=len(self.train_loader),
+            pct_start=0.1,         
+            div_factor=10.0,        
+            final_div_factor=100.0  
+        )
+        
         # Optimizer
-        self.optimizer = optim.Adam(
+        self.optimizer = optim.AdamW(
             self.model.parameters(),
             lr = self.learning_rate,
             weight_decay = self.weight_decay)
@@ -83,14 +94,15 @@ class ResNetTrainer:
                 self.scaler.scale(loss).backward()
                 self.scaler.step(self.optimizer)
                 self.scaler.update()
+                self.scheduler.step() 
             else:
                 loss.backward()
                 self.optimizer.step()
-            
+                self.scheduler.step()
+                
             predicted = outputs.argmax(dim = 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            
             loss_total += loss.item() * labels.size(0)
             
         loss_avg = loss_total / total
@@ -187,6 +199,8 @@ class ResNetTrainer:
             
             print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
             print(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
+            current_lr = self.scheduler.get_last_lr()[0]
+            print(f"LR: {current_lr:.6f}") 
             
             # Store best model
             if val_accuracy > best_val_acc:
