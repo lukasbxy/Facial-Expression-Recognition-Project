@@ -48,6 +48,12 @@ class ResNetTrainer:
         # Dataloaders
         self.train_loader, self.val_loader = get_dataloaders()
         
+         # Optimizer
+        self.optimizer = optim.AdamW(
+            self.model.parameters(),
+            lr = self.learning_rate,
+            weight_decay = self.weight_decay)
+        
         # Scheduler
         self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
             self.optimizer,
@@ -58,12 +64,6 @@ class ResNetTrainer:
             div_factor=10.0,        
             final_div_factor=100.0  
         )
-        
-        # Optimizer
-        self.optimizer = optim.AdamW(
-            self.model.parameters(),
-            lr = self.learning_rate,
-            weight_decay = self.weight_decay)
         
         self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
         
