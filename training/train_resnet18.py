@@ -8,8 +8,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-import matplotlib.pyplot as plt 
+from  training.create_cm import create_cm
 
 from models import ResNet18
 from training.load_data import get_dataloaders
@@ -95,10 +94,10 @@ class ResNetTrainer:
         
         loss_total, correct, total = 0.0, 0, 0
 
-        do_cm = (self.cm_every > 0) and ((epoch+1) % self.cm_every == 0) 
-
-        all_preds = [] 
-        all_labels = []
+        do_cm = (self.cm_every > 0) and ((epoch+1) % self.cm_every == 0) or epoch == 0 
+        if do_cm:
+            all_preds = [] 
+            all_labels = []
         
         with torch.no_grad():
             for images, labels in tqdm(self.val_loader, desc = "Validating"):
@@ -118,29 +117,16 @@ class ResNetTrainer:
                 if do_cm:
                     all_preds.append(predicted.detach().cpu())
                     all_labels.append(labels.detach().cpu())
+
+        # Create Confusion Matrix if wanted
         if do_cm:
-            all_preds = torch.cat(all_preds).numpy()
-            all_labels = torch.cat(all_labels).numpy()
-            cm = confusion_matrix(all_labels, all_preds, normalize ="true")
-            class_names = self.val_loader.dataset.classes
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm,display_labels=class_names)
-            fig, axs = plt.subplots(figsize = (8,8))
-            disp.plot(
-                ax=axs,
-                cmap="Blues",
-                values_format=".2f",
-                xticks_rotation=45,
-                colorbar=True,
-            )
-            axs.set_title(f"Confusion matrix at Epoch {epoch + 1}")
-            fig.tight_layout()
-            repo_root = Path(__file__).resolve().parents[1]
-            out_dir = repo_root /"model_metrics" / "confusion_matrices"
-            out_dir.mkdir(parents=True, exist_ok=True)
-            out_path = out_dir / f"confusion_matrix_epoch_{epoch+1:03d}.png"
-            fig.savefig(out_path, dpi=200)
-            plt.close(fig)
-            print("confusion matrix saved in model_metrics/confusion_matrices")
+            labels_np = torch.cat(all_labels).numpy()
+            preds_np  = torch.cat(all_preds).numpy()
+            cm_path = create_cm(labels=labels_np,
+                             preds=preds_np,
+                             class_names = self.val_loader.dataset.classes,
+                             epoch = epoch)
+            print(f"Confusion matrix saved at {cm_path}")
             
         loss_avg = loss_total / total
         accuracy = 100 * correct / total
