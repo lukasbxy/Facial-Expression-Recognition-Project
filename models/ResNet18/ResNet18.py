@@ -2,7 +2,7 @@
 ResNet‑18 Implementierung für Facial Expression Recognition.
 
 Verwendung:
-    from models.ResNet18.ResNet18 import ResNet18
+    from models import ResNet18
     model = ResNet18()
 
 Erwartete Eingabe:
