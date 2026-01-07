@@ -17,7 +17,7 @@ from training.early_stopping import EarlyStopping
 class ResNetTrainer:
     
     def __init__(self, 
-                 filepath: Path, # Filepath to save best model / checkpoints to
+                 model,  # Neural network model to train
                  num_epochs: int = 3, 
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
@@ -25,8 +25,14 @@ class ResNetTrainer:
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
-        self.filepath = filepath
         self.cm_every = cm_every
+        
+        # Automatically construct filepath based on model class name
+        model_name = model.__class__.__name__
+        self.filepath = Path("models") / model_name / "checkpoints" / "best.pt"
+        
+        # Create checkpoint directory if it doesn't exist
+        self.filepath.parent.mkdir(parents=True, exist_ok=True)
         
         # Set Device
         if torch.cuda.is_available():
@@ -38,7 +44,7 @@ class ResNetTrainer:
         print(f"Using Device: {self.device}")
         
         # Model
-        self.model = ResNet18()
+        self.model = model
         self.model = self.model.to(self.device)
         
         self.use_amp = self.device.type == "cuda"
@@ -191,13 +197,3 @@ class ResNetTrainer:
                 
         print("\n" + "=" * 60)
         print("Training complete.")
-        
-        
-if __name__ == "__main__":
-    # Test Training
-    # Save best model to checkpoint folder
-    dir =  Path("models") / "ResNet18" / "checkpoints"
-    dir.mkdir(parents=True, exist_ok=True)
-    chk_path = dir / "best.pt"
-    trainer = ResNetTrainer(chk_path)
-    trainer.train()

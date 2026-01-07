@@ -15,7 +15,7 @@ Ausgabe:
 """
 
 import torch.nn as nn
-from models.Attention.se_block import SEBlock
+from .se_block import SEBlock
 
 class BasicBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1, use_se = True):
