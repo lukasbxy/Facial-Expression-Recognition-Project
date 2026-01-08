@@ -157,8 +157,8 @@ class ResNetTrainer:
                 "best_val_acc": best_val_acc,
             },
             path,
-        )            
-
+        )    
+        
 
     def train(self):
         """Main training loop"""
