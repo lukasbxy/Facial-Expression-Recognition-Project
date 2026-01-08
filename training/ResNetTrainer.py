@@ -21,11 +21,15 @@ class ResNetTrainer:
                  num_epochs: int = 3, 
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
-                 cm_every: int = 5):
+                 cm_every: int = 5,
+                 use_adamw: bool = False,
+                 use_scheduler: bool = False,
+                 use_label_smoothing: bool = False):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.cm_every = cm_every
+        self.use_scheduler = use_scheduler
         
         # Automatically construct filepath based on model class name
         model_name = model.__class__.__name__
@@ -54,12 +58,34 @@ class ResNetTrainer:
         self.train_loader, self.val_loader = get_dataloaders()
         
         # Optimizer
-        self.optimizer = optim.Adam(
-            self.model.parameters(),
-            lr = self.learning_rate,
-            weight_decay = self.weight_decay)
+        # Adam or AdamW
+        if use_adamw:    
+            self.optimizer = optim.Adam(
+                self.model.parameters(),
+                lr = self.learning_rate,
+                weight_decay = self.weight_decay)
+        else:
+            self.optimizer = optim.AdamW(
+                self.model.parameters(),
+                lr = self.learning_rate,
+                weight_decay = self.weight_decay)
         
-        self.criterion = nn.CrossEntropyLoss()
+        
+        if self.use_scheduler:
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                self.optimizer,
+                max_lr=3e-4,
+                epochs=num_epochs,
+                steps_per_epoch=len(self.train_loader),
+                pct_start=0.1,         
+                div_factor=10.0,        
+                final_div_factor=100.0  
+        )
+            
+        if use_label_smoothing:
+            self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        else:
+            self.criterion = nn.CrossEntropyLoss()
         
         print("Trainer initialized.")
         
@@ -92,10 +118,12 @@ class ResNetTrainer:
                 loss.backward()
                 self.optimizer.step()
             
+            if self.use_scheduler:
+                self.scheduler.step()
+            
             predicted = outputs.argmax(dim = 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            
             loss_total += loss.item() * labels.size(0)
             
         loss_avg = loss_total / total
@@ -158,6 +186,7 @@ class ResNetTrainer:
             },
             path,
         )    
+        print(f"Saved Model to {path}")
         
 
     def train(self):
@@ -180,11 +209,14 @@ class ResNetTrainer:
             print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
             print(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
             
+            if self.use_scheduler:
+                current_lr = self.scheduler.get_last_lr()[0]
+                print(f"LR: {current_lr:.6f}") 
+            
             # Store best model
             if val_accuracy > best_val_acc:
                 best_val_acc = val_accuracy
                 self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
-                print(f"Saved Model to {self.filepath}")
             
             # Check Early Stopping
             if early_stopping.check(val_accuracy):

@@ -18,10 +18,11 @@ myenv
 venv
 
 # Ignore Checkpoints
-models/ResNet18/checkpoints
-models/ResNet18_SE/checkpoints
-models/ResNet34/checkpoints
-models/CCT/checkpoints
+models/ResNet18/checkpoints/*
+models/ResNet18_SE/checkpoints/*
+models/ResNet18_SE_Variant/checkpoints/*
+models/ResNet34/checkpoints/*
+models/CCT/checkpoints/*
 
 #Ignore confusion matrices 
 model_metrics/confusion_matrices
