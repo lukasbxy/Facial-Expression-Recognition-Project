@@ -10,7 +10,6 @@ import torch.optim as optim
 from tqdm import tqdm
 from  training.create_cm import create_cm
 
-from models import ResNet18
 from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
 
