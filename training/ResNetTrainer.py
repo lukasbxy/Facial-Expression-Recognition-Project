@@ -59,12 +59,12 @@ class ResNetTrainer:
         # Optimizer
         # Adam or AdamW
         if use_adamw:    
-            self.optimizer = optim.Adam(
+            self.optimizer = optim.AdamW(
                 self.model.parameters(),
                 lr = self.learning_rate,
                 weight_decay = self.weight_decay)
         else:
-            self.optimizer = optim.AdamW(
+            self.optimizer = optim.Adam(
                 self.model.parameters(),
                 lr = self.learning_rate,
                 weight_decay = self.weight_decay)

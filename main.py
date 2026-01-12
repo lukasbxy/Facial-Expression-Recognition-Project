@@ -4,7 +4,7 @@ from models import ResNet18_SE
 from training.ResNetTrainer import ResNetTrainer
 
 if __name__ == '__main__':
-    model = ResNet34() 
+    model = ResNet18_SE() 
     trainer = ResNetTrainer(model)
     trainer.train()
 
