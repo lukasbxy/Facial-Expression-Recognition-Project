@@ -21,7 +21,7 @@ Windows (PowerShell):
     python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
-    python demo/demo_csv.py --folder_path "..." --model_path "..." --output_csv "new_preds.csv"
+    python demo/demo_csv.py --folder_path "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
 '''
 
 
@@ -90,7 +90,10 @@ def write_csv(folder_path, model_weights,output_csv):
 
     columns = ['filepath'] + EMOTIONS
     df = pd.DataFrame(results, columns = columns)
-    df.to_csv(output_csv, index = False, float_format = '%.4f', sep = ";", decimal = ",")
+    output_path = Path(output_csv)
+    output_path.parent.mkdir(parents=True, exist_ok= True)
+    df.to_csv(output_path, index = False, float_format = '%.4f', sep = ";", decimal = ",")
+    print(f"CSV saved at {output_path}")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -112,7 +115,7 @@ def main():
     parser.add_argument(
         "--output_csv",
         type = str,
-        default = "predictions.csv",
+        default = str(Path("model_metrics") / "inference_csv" / "predictions.csv"),
         help = "Output CSV file name",
     )
     
