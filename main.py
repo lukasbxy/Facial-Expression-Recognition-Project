@@ -1,10 +1,142 @@
-from models import ResNet18
-from models import ResNet34
-from models import ResNet18_SE
+import argparse
+from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant
 from training.ResNetTrainer import ResNetTrainer
 
-if __name__ == '__main__':
-    model = ResNet18_SE() 
-    trainer = ResNetTrainer(model)
+
+def get_model(model_name: str):
+    """Load the desired model based on the name."""
+    models = {
+        'resnet18': ResNet18,
+        'resnet18_se': ResNet18_SE,
+        'resnet18_se_variant': ResNet18_SE_Variant,
+    }
+    
+    if model_name.lower() not in models:
+        raise ValueError(f"Unknown model: {model_name}. Available: {list(models.keys())}")
+    
+    return models[model_name.lower()]()
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Train Facial Expression Recognition Models',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python main.py --model resnet18_se_variant --epochs 50 --lr 0.001
+  python main.py --model resnet18 --batch-size 64 --use-adamw
+  python main.py --model resnet18_se --epochs 100 --use-scheduler --use-label-smoothing
+        """
+    )
+    
+    parser.add_argument(
+        '--model',
+        type=str,
+        default='resnet18_se_variant',
+        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant'],
+        help='Select the model (default: resnet18_se_variant)'
+    )
+    
+    parser.add_argument(
+        '--epochs',
+        type=int,
+        default=32,
+        help='Number of training epochs (default: 32)'
+    )
+    
+    parser.add_argument(
+        '--lr', '--learning-rate',
+        type=float,
+        default=0.001,
+        help='Learning rate (default: 0.001)'
+    )
+    
+    parser.add_argument(
+        '--weight-decay',
+        type=float,
+        default=0.0001,
+        help='Weight decay (default: 0.0001)'
+    )
+    
+    parser.add_argument(
+        '--batch-size',
+        type=int,
+        default=32,
+        help='Batch size (default: 32)'
+    )
+    
+    parser.add_argument(
+        '--cm-every',
+        type=int,
+        default=1,
+        help='Save confusion matrix every N epochs (default: 5, set to 1 for every epoch)'
+    )
+    
+    parser.add_argument(
+        '--use-adamw',
+        action='store_true',
+        help='Use AdamW instead of Adam optimizer'
+    )
+    
+    parser.add_argument(
+        '--use-scheduler',
+        action='store_true',
+        help='Use learning rate scheduler (OneCycleLR)'
+    )
+    
+    parser.add_argument(
+        '--use-label-smoothing',
+        action='store_true',
+        help='Use label smoothing in CrossEntropyLoss'
+    )
+    
+    parser.add_argument(
+        '--no-sampler',
+        action='store_true',
+        help='Disable WeightedRandomSampler for class balance'
+    )
+    
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default='full',
+        choices=['full', 'sample'],
+        help='Select the dataset (default: full)'
+    )
+    
+    args = parser.parse_args()
+    
+    # Load model
+    print(f"Loading model: {args.model}")
+    model = get_model(args.model)
+    
+    # Create trainer with arguments
+    print(f"\nTrainer Configuration:")
+    print(f"  Dataset: {args.dataset}")
+    print(f"  Epochs: {args.epochs}")
+    print(f"  Learning Rate: {args.lr}")
+    print(f"  Weight Decay: {args.weight_decay}")
+    print(f"  AdamW: {args.use_adamw}")
+    print(f"  Scheduler: {args.use_scheduler}")
+    print(f"  Label Smoothing: {args.use_label_smoothing}")
+    print(f"  Confusion Matrix every: {args.cm_every} epochs")
+    print()
+    
+    trainer = ResNetTrainer(
+        model,
+        num_epochs=args.epochs,
+        learning_rate=args.lr,
+        weight_decay=args.weight_decay,
+        dataset=args.dataset,
+        cm_every=args.cm_every,
+        use_adamw=args.use_adamw,
+        use_scheduler=args.use_scheduler,
+        use_label_smoothing=args.use_label_smoothing
+    )
+    
     trainer.train()
+
+
+if __name__ == '__main__':
+    main()
 

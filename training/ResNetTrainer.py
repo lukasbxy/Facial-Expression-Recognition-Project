@@ -11,10 +11,11 @@ from training.early_stopping import EarlyStopping
 class ResNetTrainer:
     
     def __init__(self, 
-                 model,  # Neural network model to train
+                 model,
                  num_epochs: int = 32, 
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
+                 dataset: str = 'full',
                  cm_every: int = 1,
                  use_adamw: bool = False,
                  use_scheduler: bool = False,
@@ -22,6 +23,7 @@ class ResNetTrainer:
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
+        self.dataset = dataset
         self.cm_every = cm_every
         self.use_scheduler = use_scheduler
         
@@ -47,10 +49,10 @@ class ResNetTrainer:
         self.model = self.model.to(self.device)
         
         self.use_amp = self.device.type == "cuda"
-        self.scaler = torch.amp.GradScaler(device = self.device.type, enabled = self.use_amp) # type: ignore
+        self.scaler = torch.amp.GradScaler(device = self.device.type, enabled = self.use_amp)
         
         # Dataloaders
-        self.train_loader, self.val_loader = get_dataloaders()
+        self.train_loader, self.val_loader = get_dataloaders(dataset=self.dataset)
         
         # Optimizer
         # Adam or AdamW
@@ -94,7 +96,7 @@ class ResNetTrainer:
         loss_total = 0.0
         correct, total = 0, 0
         
-        for images, labels in tqdm(self.train_loader, desc = f"Training {self.model_name}"):
+        for images, labels in tqdm(self.train_loader, desc=f"Training {self.model_name}"):
             # Load images to GPU/CPU
             images = images.to(self.device)
             labels = labels.to(self.device)
@@ -129,18 +131,12 @@ class ResNetTrainer:
     def validate(self, epoch):
         """Validate module on validation data"""
         self.model.eval()
-        
         loss_total, correct, total = 0.0, 0, 0
-
-        # CHANGED: Force confusion matrix generation every epoch
-        do_cm = True 
-        
-        if do_cm:
-            all_preds = [] 
-            all_labels = []
+        all_preds = [] 
+        all_labels = []
         
         with torch.no_grad():
-            for images, labels in tqdm(self.val_loader, desc = "Validating"):
+            for images, labels in tqdm(self.val_loader, desc="Validating"):
                 # Load images to GPU/CPU
                 images = images.to(self.device)
                 labels = labels.to(self.device)
@@ -153,13 +149,9 @@ class ResNetTrainer:
                 correct += (predicted == labels).sum().item()
                 loss_total += loss.item() * labels.size(0)
 
-                # Append predictions and labels 
-                if do_cm:
-                    all_preds.append(predicted.detach().cpu())
-                    all_labels.append(labels.detach().cpu())
-
-        # Create Confusion Matrix if wanted
-        if do_cm:
+                all_preds.append(predicted.detach().cpu())
+                all_labels.append(labels.detach().cpu())
+                
             labels_np = torch.cat(all_labels).numpy()
             preds_np  = torch.cat(all_preds).numpy()
             
