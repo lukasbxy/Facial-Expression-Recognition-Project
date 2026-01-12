@@ -1,14 +1,9 @@
-"""
-Implementierung eines Training-Loops für ResNet-18 (models/ResNet-18)
-
-Beispielhafte Implementierung siehe Ende der Datei.
-"""
 from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-from  training.create_cm import create_cm
+from training.create_cm import create_cm
 
 from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
@@ -17,10 +12,10 @@ class ResNetTrainer:
     
     def __init__(self, 
                  model,  # Neural network model to train
-                 num_epochs: int = 3, 
+                 num_epochs: int = 32, 
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
-                 cm_every: int = 5,
+                 cm_every: int = 1,
                  use_adamw: bool = False,
                  use_scheduler: bool = False,
                  use_label_smoothing: bool = False):
@@ -31,8 +26,9 @@ class ResNetTrainer:
         self.use_scheduler = use_scheduler
         
         # Automatically construct filepath based on model class name
-        model_name = model.__class__.__name__
-        self.filepath = Path("models") / model_name / "checkpoints" / "best.pt"
+        # Store model_name in self for use in logging and filenames
+        self.model_name = model.__class__.__name__
+        self.filepath = Path("models") / self.model_name / "checkpoints" / "best.pt"
         
         # Create checkpoint directory if it doesn't exist
         self.filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -98,7 +94,7 @@ class ResNetTrainer:
         loss_total = 0.0
         correct, total = 0, 0
         
-        for images, labels in tqdm(self.train_loader, desc = "Training"):
+        for images, labels in tqdm(self.train_loader, desc = f"Training {self.model_name}"):
             # Load images to GPU/CPU
             images = images.to(self.device)
             labels = labels.to(self.device)
@@ -136,7 +132,9 @@ class ResNetTrainer:
         
         loss_total, correct, total = 0.0, 0, 0
 
-        do_cm = (self.cm_every > 0) and ((epoch+1) % self.cm_every == 0) or epoch == 0 
+        # CHANGED: Force confusion matrix generation every epoch
+        do_cm = True 
+        
         if do_cm:
             all_preds = [] 
             all_labels = []
@@ -164,10 +162,12 @@ class ResNetTrainer:
         if do_cm:
             labels_np = torch.cat(all_labels).numpy()
             preds_np  = torch.cat(all_preds).numpy()
+            
             cm_path = create_cm(labels=labels_np,
                              preds=preds_np,
                              class_names = self.val_loader.dataset.classes,
-                             epoch = epoch)
+                             epoch = epoch,
+                             model_name = self.model_name)
             print(f"Confusion matrix saved at {cm_path}")
             
         loss_avg = loss_total / total
@@ -190,7 +190,7 @@ class ResNetTrainer:
 
     def train(self):
         """Main training loop"""
-        print(f"Beginning training for {self.num_epochs} epochs.")
+        print(f"Beginning training for {self.model_name} for {self.num_epochs} epochs.")
         print(60*"-")
         
         # Store best accuracy during run to determine when to save model.
