@@ -2,6 +2,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from tqdm import tqdm
 from training.create_cm import create_cm
 
@@ -19,13 +20,15 @@ class ResNetTrainer:
                  cm_every: int = 1,
                  use_adamw: bool = False,
                  use_scheduler: bool = False,
-                 use_label_smoothing: bool = False):
+                 use_label_smoothing: bool = False,
+                 use_class_weights: bool = False):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.dataset = dataset
         self.cm_every = cm_every
         self.use_scheduler = use_scheduler
+        self.use_class_weights = use_class_weights
         
         # Automatically construct filepath based on model class name
         # Store model_name in self for use in logging and filenames
@@ -54,6 +57,18 @@ class ResNetTrainer:
         # Dataloaders
         self.train_loader, self.val_loader = get_dataloaders(dataset=self.dataset)
         
+        # Compute class weights if needed
+        if use_class_weights:
+            # Automatically compute class weights from training dataset
+            targets = np.array(self.train_loader.dataset.targets)
+            class_counts = np.bincount(targets)
+            # Compute inverse frequency weights and normalize
+            class_weights = 1.0 / class_counts
+            class_weights = class_weights / class_weights.sum() * len(class_counts)
+            class_weights = torch.FloatTensor(class_weights).to(self.device)
+        else:
+            class_weights = None
+        
         # Optimizer
         # Adam or AdamW
         if use_adamw:    
@@ -80,9 +95,15 @@ class ResNetTrainer:
         )
             
         if use_label_smoothing:
-            self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+            if use_class_weights and class_weights is not None:
+                self.criterion = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.1)
+            else:
+                self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
         else:
-            self.criterion = nn.CrossEntropyLoss()
+            if use_class_weights and class_weights is not None:
+                self.criterion = nn.CrossEntropyLoss(weight=class_weights)
+            else:
+                self.criterion = nn.CrossEntropyLoss()
         
         print("Trainer initialized.")
         

@@ -26,6 +26,7 @@ Examples:
   python main.py --model resnet18_se_variant --epochs 50 --lr 0.001
   python main.py --model resnet18 --batch-size 64 --use-adamw
   python main.py --model resnet18_se --epochs 100 --use-scheduler --use-label-smoothing
+  python main.py --model resnet18 --use-class-weights --use-label-smoothing
         """
     )
     
@@ -91,6 +92,12 @@ Examples:
     )
     
     parser.add_argument(
+        '--use-class-weights',
+        action='store_true',
+        help='Use class weights in CrossEntropyLoss to handle class imbalance'
+    )
+    
+    parser.add_argument(
         '--no-sampler',
         action='store_true',
         help='Disable WeightedRandomSampler for class balance'
@@ -119,6 +126,7 @@ Examples:
     print(f"  AdamW: {args.use_adamw}")
     print(f"  Scheduler: {args.use_scheduler}")
     print(f"  Label Smoothing: {args.use_label_smoothing}")
+    print(f"  Class Weights: {args.use_class_weights}")
     print(f"  Confusion Matrix every: {args.cm_every} epochs")
     print()
     
@@ -131,7 +139,8 @@ Examples:
         cm_every=args.cm_every,
         use_adamw=args.use_adamw,
         use_scheduler=args.use_scheduler,
-        use_label_smoothing=args.use_label_smoothing
+        use_label_smoothing=args.use_label_smoothing,
+        use_class_weights=args.use_class_weights
     )
     
     trainer.train()
