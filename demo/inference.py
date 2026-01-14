@@ -18,10 +18,10 @@ Windows (PowerShell):
     pip install -r requirements.txt
 
 3) Run
-    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model_path "PATH/TO/CHECKPOINT.pt"
+    python demo/inference.py --folder_path "PATH/TO/IMAGE/FOLDER" --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
-    python demo/demo_csv.py --folder_path "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
+    python demo/inference.py --folder_path "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
 '''
 
 
