@@ -7,6 +7,7 @@ def create_cm(labels,
           class_names,
           epoch: int,
           model_name: str,
+          timestamp: str = None,
           normalize: str = "true"
           ):
     
@@ -21,7 +22,11 @@ def create_cm(labels,
     out_dir = repo_root / "model_metrics" / "confusion_matrices"
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    out_path = out_dir / f"{model_name}_confusion_matrix_epoch_{epoch+1:03d}.png"
+    # Use timestamp if provided, otherwise use old naming scheme
+    if timestamp:
+        out_path = out_dir / f"{timestamp}_ConfusionMatrices_{model_name}_epoch_{epoch+1:03d}.png"
+    else:
+        out_path = out_dir / f"{model_name}_confusion_matrix_epoch_{epoch+1:03d}.png"
 
     cm = confusion_matrix(labels, preds, normalize=normalize)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm,

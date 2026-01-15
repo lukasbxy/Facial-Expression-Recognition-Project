@@ -6,6 +6,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
+from datetime import datetime
+import logging
+import sys
 from training.create_cm import create_cm
 
 from training.load_data import get_dataloaders
@@ -28,13 +31,19 @@ class CCTTrainer:
         self.cm_every = cm_every
         self.use_scheduler = use_scheduler
         
+        # Store model name and generate timestamp
+        self.model_name = model.__class__.__name__
+        self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M")
+        
+        # Update filepath with timestamp naming scheme
+        self.filepath = Path("models") / self.model_name / "checkpoints" / f"{self.timestamp}_Checkpoint_{self.model_name}.pt"
+        self.filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Setup logging
+        self._setup_logging()
+        
         # --- OPTIMIZATION: CUDA Benchmark ---
         torch.backends.cudnn.benchmark = True
-        
-        # Automatically construct filepath
-        model_name = model.__class__.__name__
-        self.filepath = Path("models") / model_name / "checkpoints" / "best.pt"
-        self.filepath.parent.mkdir(parents=True, exist_ok=True)
         
         # Set Device
         if torch.cuda.is_available():
@@ -43,7 +52,7 @@ class CCTTrainer:
             self.device = torch.device('mps')
         else:
             self.device = torch.device('cpu')
-        print(f"Using Device: {self.device}")
+        self.logger.info(f"Using Device: {self.device}")
         
         # --- OPTIMIZATION: Channels Last Memory Format ---
         self.model = model.to(self.device, memory_format=torch.channels_last)
@@ -51,9 +60,9 @@ class CCTTrainer:
         # --- OPTIMIZATION: Model Compilation (PyTorch 2.0+) ---
         try:
             self.model = torch.compile(self.model)
-            print("Model compiled with torch.compile() for speed.")
+            self.logger.info("Model compiled with torch.compile() for speed.")
         except Exception as e:
-            print(f"Skipping torch.compile: {e}")
+            self.logger.info(f"Skipping torch.compile: {e}")
 
         self.use_amp = (self.device.type == "cuda")
         self.scaler = torch.amp.GradScaler(device=self.device.type, enabled=self.use_amp)
@@ -86,7 +95,42 @@ class CCTTrainer:
         else:
             self.criterion = nn.CrossEntropyLoss()
         
-        print("CCT Trainer initialized.")
+        self.logger.info("CCT Trainer initialized.")
+        
+    def _setup_logging(self):
+        """Setup logging to both console and file"""
+        # Create logs directory if it doesn't exist
+        log_dir = Path("logs")
+        log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create log file with timestamp
+        log_file = log_dir / f"{self.timestamp}_Log_{self.model_name}.log"
+        
+        # Configure logger
+        self.logger = logging.getLogger(f"{self.model_name}_{self.timestamp}")
+        self.logger.setLevel(logging.INFO)
+        
+        # Remove existing handlers to avoid duplicates
+        self.logger.handlers.clear()
+        
+        # File handler
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.INFO)
+        
+        # Console handler
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        
+        # Formatter
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+        
+        # Add handlers
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
+        
+        self.logger.info(f"Logging initialized. Log file: {log_file}")
         
     def train_one_epoch(self):
         self.model.train()
@@ -152,8 +196,10 @@ class CCTTrainer:
             cm_path = create_cm(labels=labels_np,
                              preds=preds_np,
                              class_names=self.val_loader.dataset.classes,
-                             epoch=epoch)
-            print(f"Confusion matrix saved at {cm_path}")
+                             epoch=epoch,
+                             model_name=self.model_name,
+                             timestamp=self.timestamp)
+            self.logger.info(f"Confusion matrix saved at {cm_path}")
             
         return loss_total / total, 100 * correct / total
     
@@ -166,34 +212,34 @@ class CCTTrainer:
             "optim_state": optimizer.state_dict(),
             "best_val_acc": best_val_acc,
         }, path)    
-        print(f"Saved Model to {path}")
+        self.logger.info(f"Saved Model to {path}")
 
     def train(self):
-        print(f"Beginning CCT training for {self.num_epochs} epochs.")
-        print("-" * 60)
+        self.logger.info(f"Beginning CCT training for {self.num_epochs} epochs.")
+        self.logger.info("-" * 60)
         
         best_val_acc = -1.0
         early_stopping = EarlyStopping(patience=5, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
-            print(f"\nEpoch {epoch+1}/{self.num_epochs}")
+            self.logger.info(f"\nEpoch {epoch+1}/{self.num_epochs}")
             
             train_loss, train_acc = self.train_one_epoch()
             val_loss, val_acc = self.validate(epoch)
             
-            print(f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}%")
-            print(f"Val Loss:   {val_loss:.4f} | Val Acc:   {val_acc:.2f}%")
+            self.logger.info(f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}%")
+            self.logger.info(f"Val Loss:   {val_loss:.4f} | Val Acc:   {val_acc:.2f}%")
             
             if self.use_scheduler:
-                print(f"LR: {self.scheduler.get_last_lr()[0]:.6f}") 
+                self.logger.info(f"LR: {self.scheduler.get_last_lr()[0]:.6f}") 
             
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
             
             if early_stopping.check(val_acc):
-                print(f"\nEarly stopping triggered. Best Acc: {early_stopping.best_value:.2f}%")
+                self.logger.info(f"\nEarly stopping triggered. Best Acc: {early_stopping.best_value:.2f}%")
                 break
                 
-        print("\n" + "=" * 60)
-        print("Training complete.")
+        self.logger.info("\n" + "=" * 60)
+        self.logger.info("Training complete.")

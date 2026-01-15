@@ -4,6 +4,9 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
+from datetime import datetime
+import logging
+import sys
 from training.create_cm import create_cm
 
 from training.load_data import get_dataloaders
@@ -33,10 +36,18 @@ class ResNetTrainer:
         # Automatically construct filepath based on model class name
         # Store model_name in self for use in logging and filenames
         self.model_name = model.__class__.__name__
-        self.filepath = Path("models") / self.model_name / "checkpoints" / "best.pt"
+        
+        # Generate timestamp for this training session
+        self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M")
+        
+        # Update filepath with timestamp naming scheme
+        self.filepath = Path("models") / self.model_name / "checkpoints" / f"{self.timestamp}_Checkpoint_{self.model_name}.pt"
         
         # Create checkpoint directory if it doesn't exist
         self.filepath.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Setup logging
+        self._setup_logging()
         
         # Set Device
         if torch.cuda.is_available():
@@ -45,7 +56,7 @@ class ResNetTrainer:
             self.device = torch.device('mps')
         else:
             self.device = torch.device('cpu')
-        print(f"Using Device: {self.device}")
+        self.logger.info(f"Using Device: {self.device}")
         
         # Model
         self.model = model
@@ -105,7 +116,42 @@ class ResNetTrainer:
             else:
                 self.criterion = nn.CrossEntropyLoss()
         
-        print("Trainer initialized.")
+        self.logger.info("Trainer initialized.")
+        
+    def _setup_logging(self):
+        """Setup logging to both console and file"""
+        # Create logs directory if it doesn't exist
+        log_dir = Path("logs")
+        log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create log file with timestamp
+        log_file = log_dir / f"{self.timestamp}_Log_{self.model_name}.log"
+        
+        # Configure logger
+        self.logger = logging.getLogger(f"{self.model_name}_{self.timestamp}")
+        self.logger.setLevel(logging.INFO)
+        
+        # Remove existing handlers to avoid duplicates
+        self.logger.handlers.clear()
+        
+        # File handler
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.INFO)
+        
+        # Console handler
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        
+        # Formatter
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+        
+        # Add handlers
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
+        
+        self.logger.info(f"Logging initialized. Log file: {log_file}")
         
     def train_one_epoch(self):
         """
@@ -180,8 +226,9 @@ class ResNetTrainer:
                              preds=preds_np,
                              class_names = self.val_loader.dataset.classes,
                              epoch = epoch,
-                             model_name = self.model_name)
-            print(f"Confusion matrix saved at {cm_path}")
+                             model_name = self.model_name,
+                             timestamp = self.timestamp)
+            self.logger.info(f"Confusion matrix saved at {cm_path}")
             
         loss_avg = loss_total / total
         accuracy = 100 * correct / total
@@ -198,13 +245,13 @@ class ResNetTrainer:
             },
             path,
         )    
-        print(f"Saved Model to {path}")
+        self.logger.info(f"Saved Model to {path}")
         
 
     def train(self):
         """Main training loop"""
-        print(f"Beginning training for {self.model_name} for {self.num_epochs} epochs.")
-        print(60*"-")
+        self.logger.info(f"Beginning training for {self.model_name} for {self.num_epochs} epochs.")
+        self.logger.info("-" * 60)
         
         # Store best accuracy during run to determine when to save model.
         best_val_acc = -1.0
@@ -213,17 +260,17 @@ class ResNetTrainer:
         early_stopping = EarlyStopping(patience=5, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
-            print(f"\nEpoch {epoch+1}/{self.num_epochs}")
+            self.logger.info(f"\nEpoch {epoch+1}/{self.num_epochs}")
             
             train_loss, train_accuracy = self.train_one_epoch()
             val_loss, val_accuracy = self.validate(epoch)
             
-            print(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
-            print(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
+            self.logger.info(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
+            self.logger.info(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
             
             if self.use_scheduler:
                 current_lr = self.scheduler.get_last_lr()[0]
-                print(f"LR: {current_lr:.6f}") 
+                self.logger.info(f"LR: {current_lr:.6f}") 
             
             # Store best model
             if val_accuracy > best_val_acc:
@@ -232,12 +279,12 @@ class ResNetTrainer:
             
             # Check Early Stopping
             if early_stopping.check(val_accuracy):
-                print(f"\n{'='*60}")
-                print(f"Early stopping triggered after {epoch+1} epochs.")
-                print(f"No improvement in validation accuracy for {early_stopping.patience} epochs.")
-                print(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
-                print(f"{'='*60}")
+                self.logger.info(f"\n{'='*60}")
+                self.logger.info(f"Early stopping triggered after {epoch+1} epochs.")
+                self.logger.info(f"No improvement in validation accuracy for {early_stopping.patience} epochs.")
+                self.logger.info(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
+                self.logger.info(f"{'='*60}")
                 break
                 
-        print("\n" + "=" * 60)
-        print("Training complete.")
+        self.logger.info("\n" + "=" * 60)
+        self.logger.info("Training complete.")
