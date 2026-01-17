@@ -27,7 +27,8 @@ class ResNetTrainer:
                  use_label_smoothing: bool = False,
                  use_class_weights: bool = False,
                  best_model_filename: str = "best.pt",
-                 last_model_filename: str = "last.pt"):
+                 last_model_filename: str = "last.pt",
+                 early_stopping_patience: int = 5):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -37,6 +38,7 @@ class ResNetTrainer:
         self.use_class_weights = use_class_weights
         self.best_model_filename = best_model_filename
         self.last_model_filename = last_model_filename
+        self.early_stopping_patience = early_stopping_patience
         
         # Automatically construct filepath based on model class name
         # Store model_name in self for use in logging and filenames
@@ -44,12 +46,6 @@ class ResNetTrainer:
         
         # Generate timestamp for this training session
         self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M.%S")
-        
-        # Update filepath with timestamp naming scheme
-        # self.best_model_path = Path("models") / self.model_name / "checkpoints" / f"{self.timestamp}_Checkpoint_{self.model_name}.pt"
-        
-        # Create checkpoint directory if it doesn't exist
-        # self.best_model_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Setup logging
         self._setup_checkpoints_logging()
@@ -184,7 +180,25 @@ class ResNetTrainer:
             self._metrics_writer.writeheader()
         self._metrics_writer.writerow(metrics)
         self._metrics_file.flush()
-
+        
+    def _get_config(self):
+        """Print out selected config of trainer for logging purposes!"""
+        return {
+            "num_epochs": self.num_epochs,
+            "learning_rate": self.learning_rate,
+            "weight_decay": self.weight_decay,
+            "dataset": self.dataset,
+            "cm_every": self.cm_every,
+            "use_scheduler": self.use_scheduler,
+            "use_class_weights": self.use_class_weights,
+            "best_model_filename": self.best_model_filename,
+            "last_model_filename": self.last_model_filename,
+            "device": str(self.device),
+            "model.class": self.model.__class__.__name__,
+            "scheduler": self.scheduler.__class__.__name__ if self.use_scheduler else None,
+            "optimizer": self.optimizer.__class__.__name__,
+            "early_stopping_patience": str(self.early_stopping_patience)
+        }
         
     def train_one_epoch(self):
         """
@@ -285,6 +299,11 @@ class ResNetTrainer:
 
     def train(self):
         """Main training loop"""
+        self.logger.info("==== Trainer Configuration: ====")
+        for k, v in self._get_config().items():
+            self.logger.info(f" {k}: {v}")
+        self.logger.info("================================")
+        
         self.logger.info(f"Beginning training for {self.model_name} for {self.num_epochs} epochs.")
         self.logger.info("-" * 60)
         
@@ -292,7 +311,7 @@ class ResNetTrainer:
         best_val_acc = -1.0
         
         # Initialize Early Stopping
-        early_stopping = EarlyStopping(patience=5, min_delta=0.001, mode='max')
+        early_stopping = EarlyStopping(patience=self.early_stopping_patience, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
             self.logger.info(f"\nEpoch {epoch+1}/{self.num_epochs}")
