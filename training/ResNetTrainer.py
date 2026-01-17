@@ -27,7 +27,7 @@ class ResNetTrainer:
                  use_label_smoothing: bool = False,
                  use_class_weights: bool = False,
                  best_model_filename: str = "best.pt",
-                 last_model_filename: str = "last.pt",
+                 last_model_filename: str = "last.pt", # Inside checkpoints folder in run dir
                  early_stopping_patience: int = 5):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
@@ -194,7 +194,7 @@ class ResNetTrainer:
             "best_model_filename": self.best_model_filename,
             "last_model_filename": self.last_model_filename,
             "device": str(self.device),
-            "model.class": self.model.__class__.__name__,
+            "model.class": self.model_name,
             "scheduler": self.scheduler.__class__.__name__ if self.use_scheduler else None,
             "optimizer": self.optimizer.__class__.__name__,
             "early_stopping_patience": str(self.early_stopping_patience)
@@ -314,7 +314,7 @@ class ResNetTrainer:
         early_stopping = EarlyStopping(patience=self.early_stopping_patience, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
-            self.logger.info(f"\nEpoch {epoch+1}/{self.num_epochs}")
+            self.logger.info(f"Epoch {epoch+1}/{self.num_epochs}")
             
             train_loss, train_accuracy = self.train_one_epoch()
             val_loss, val_accuracy = self.validate(epoch)
