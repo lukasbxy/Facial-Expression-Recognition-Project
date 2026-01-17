@@ -8,6 +8,7 @@ from datetime import datetime
 import logging
 import sys
 from training.create_cm import create_cm
+import csv
 
 from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
@@ -24,7 +25,9 @@ class ResNetTrainer:
                  use_adamw: bool = False,
                  use_scheduler: bool = False,
                  use_label_smoothing: bool = False,
-                 use_class_weights: bool = False):
+                 use_class_weights: bool = False,
+                 best_model_filename: str = "best.pt",
+                 last_model_filename: str = "last.pt"):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -32,22 +35,27 @@ class ResNetTrainer:
         self.cm_every = cm_every
         self.use_scheduler = use_scheduler
         self.use_class_weights = use_class_weights
+        self.best_model_filename = best_model_filename
+        self.last_model_filename = last_model_filename
         
         # Automatically construct filepath based on model class name
         # Store model_name in self for use in logging and filenames
         self.model_name = model.__class__.__name__
         
         # Generate timestamp for this training session
-        self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M")
+        self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M.%S")
         
         # Update filepath with timestamp naming scheme
-        self.filepath = Path("models") / self.model_name / "checkpoints" / f"{self.timestamp}_Checkpoint_{self.model_name}.pt"
+        # self.best_model_path = Path("models") / self.model_name / "checkpoints" / f"{self.timestamp}_Checkpoint_{self.model_name}.pt"
         
         # Create checkpoint directory if it doesn't exist
-        self.filepath.parent.mkdir(parents=True, exist_ok=True)
+        # self.best_model_path.parent.mkdir(parents=True, exist_ok=True)
         
         # Setup logging
-        self._setup_logging()
+        self._setup_checkpoints_logging()
+        
+        # Create metrics file
+        self._setup_metrics()
         
         # Set Device
         if torch.cuda.is_available():
@@ -79,6 +87,7 @@ class ResNetTrainer:
             class_weights = torch.FloatTensor(class_weights).to(self.device)
         else:
             class_weights = None
+            
         
         # Optimizer
         # Adam or AdamW
@@ -118,14 +127,18 @@ class ResNetTrainer:
         
         self.logger.info("Trainer initialized.")
         
-    def _setup_logging(self):
-        """Setup logging to both console and file"""
-        # Create logs directory if it doesn't exist
-        log_dir = Path("logs")
+    def _setup_checkpoints_logging(self):
+        """Setup logging and file_system"""
+        # Create runs directory if it doesn't exist
+        log_dir = Path("runs")
         log_dir.mkdir(parents=True, exist_ok=True)
         
+        # Create folder for model run
+        self.run_dir = log_dir / self.model_name / self.timestamp
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+        
         # Create log file with timestamp
-        log_file = log_dir / f"{self.timestamp}_Log_{self.model_name}.log"
+        log_file = self.run_dir / "train.log"
         
         # Configure logger
         self.logger = logging.getLogger(f"{self.model_name}_{self.timestamp}")
@@ -151,7 +164,27 @@ class ResNetTrainer:
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
         
-        self.logger.info(f"Logging initialized. Log file: {log_file}")
+        # setup checkpoint folders
+        self.checkpoints_path = self.run_dir / "checkpoints"
+        self.checkpoints_path.mkdir(parents=True, exist_ok=True)
+        
+        self.logger.info(f"Logging initialized. Run directory: {self.run_dir}")
+        
+    def _setup_metrics(self):
+        self.metrics_path = self.run_dir / "metrics.csv"
+        self._metrics_file = self.metrics_path.open("a", newline="")
+        self._metrics_writer = None
+        
+    def _log_metrics(self, metrics: dict):
+        if self._metrics_writer is None:
+            self._metrics_writer = csv.DictWriter(
+                self._metrics_file,
+                fieldnames=list(metrics.keys())
+            )
+            self._metrics_writer.writeheader()
+        self._metrics_writer.writerow(metrics)
+        self._metrics_file.flush()
+
         
     def train_one_epoch(self):
         """
@@ -227,7 +260,9 @@ class ResNetTrainer:
                              class_names = self.val_loader.dataset.classes,
                              epoch = epoch,
                              model_name = self.model_name,
-                             timestamp = self.timestamp)
+                             timestamp = self.timestamp,
+                             out_dir = self.run_dir / "confusion_matrices")
+            
             self.logger.info(f"Confusion matrix saved at {cm_path}")
             
         loss_avg = loss_total / total
@@ -275,7 +310,20 @@ class ResNetTrainer:
             # Store best model
             if val_accuracy > best_val_acc:
                 best_val_acc = val_accuracy
-                self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
+                self.save_model(self.checkpoints_path / self.best_model_filename, self.model, self.optimizer, epoch, best_val_acc)
+            
+            # Store last model
+            self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, best_val_acc)
+            
+            # Log metrics
+            self._log_metrics({
+                "epoch": epoch + 1,
+                "train_loss": train_loss,
+                "train_acc": train_accuracy,
+                "val_loss": val_loss,
+                "val_acc": val_accuracy,
+                "lr": self.optimizer.param_groups[0]["lr"],
+            })
             
             # Check Early Stopping
             if early_stopping.check(val_accuracy):
