@@ -9,6 +9,7 @@ import logging
 import sys
 from training.create_cm import create_cm
 import csv
+from torchmetrics.classification import MulticlassF1Score
 
 from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
@@ -120,6 +121,10 @@ class ResNetTrainer:
                 self.criterion = nn.CrossEntropyLoss(weight=class_weights)
             else:
                 self.criterion = nn.CrossEntropyLoss()
+                
+        # Setup F1 Score
+        self.num_classes = len(self.val_loader.dataset.classes)
+        self.val_f1_macro = MulticlassF1Score(num_classes=self.num_classes, average="macro").to(self.device)
         
         self.logger.info("Trainer initialized.")
         
@@ -244,6 +249,7 @@ class ResNetTrainer:
     
     def validate(self, epoch):
         """Validate module on validation data"""
+        self.val_f1_macro.reset()
         self.model.eval()
         loss_total, correct, total = 0.0, 0, 0
         all_preds = [] 
@@ -262,6 +268,7 @@ class ResNetTrainer:
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
                 loss_total += loss.item() * labels.size(0)
+                self.val_f1_macro.update(predicted, labels) # Update F1 scoring
 
                 all_preds.append(predicted.detach().cpu())
                 all_labels.append(labels.detach().cpu())
@@ -269,6 +276,7 @@ class ResNetTrainer:
             labels_np = torch.cat(all_labels).numpy()
             preds_np  = torch.cat(all_preds).numpy()
             
+            # Save confusion matrics
             cm_path = create_cm(labels=labels_np,
                              preds=preds_np,
                              class_names = self.val_loader.dataset.classes,
@@ -281,10 +289,13 @@ class ResNetTrainer:
             
         loss_avg = loss_total / total
         accuracy = 100 * correct / total
-        return loss_avg, accuracy
+        val_f1_macro = float(self.val_f1_macro.compute().detach().cpu())
+        return loss_avg, accuracy, val_f1_macro
     
     
     def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
+        """Save model to specified path with extra info incl. optimizer and best val acc"""
+        # TODO: Add option for saving scheduler state
         torch.save(
             {
                 "epoch": epoch,
@@ -317,11 +328,13 @@ class ResNetTrainer:
             self.logger.info(f"Epoch {epoch+1}/{self.num_epochs}")
             
             train_loss, train_accuracy = self.train_one_epoch()
-            val_loss, val_accuracy = self.validate(epoch)
+            val_loss, val_accuracy, val_f1_macro = self.validate(epoch)
             
             self.logger.info(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
             self.logger.info(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
+            self.logger.info(f"F1 Macro: {val_f1_macro:.4f}")
             
+            # Use scheduler if enabled
             if self.use_scheduler:
                 current_lr = self.scheduler.get_last_lr()[0]
                 self.logger.info(f"LR: {current_lr:.6f}") 
@@ -334,7 +347,7 @@ class ResNetTrainer:
             # Store last model
             self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, best_val_acc)
             
-            # Log metrics
+            # Log metrics in run
             self._log_metrics({
                 "epoch": epoch + 1,
                 "train_loss": train_loss,
@@ -342,6 +355,7 @@ class ResNetTrainer:
                 "val_loss": val_loss,
                 "val_acc": val_accuracy,
                 "lr": self.optimizer.param_groups[0]["lr"],
+                "f1_macro": val_f1_macro
             })
             
             # Check Early Stopping
