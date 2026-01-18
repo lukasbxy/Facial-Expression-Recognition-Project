@@ -157,7 +157,7 @@ class ResNetTrainer:
         console_handler.setLevel(logging.INFO)
         
         # Formatter
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('[%(asctime)s] %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
         
