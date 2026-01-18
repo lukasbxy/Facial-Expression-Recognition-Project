@@ -34,4 +34,4 @@ model_metrics/inference_csv
 logs/
 
 # Ignore runs
-runs/*
+runs/*/
