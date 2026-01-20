@@ -1,7 +1,7 @@
 # DATASET CONFIGURATION
 # Pfade zu den Datasets
 dataset:
-  # Vollständiges Dataset
+  # Vollständiges Dataset (alle 5 Datasets kombiniert)
   full:
     train: ./dataset/dataset_full/training_set
     val: ./dataset/dataset_full/validation_set
@@ -10,6 +10,27 @@ dataset:
   sample:
     train: ./dataset/dataset_sample/training_set
     val: ./dataset/dataset_sample/validation_set
+  
+  # Individual Datasets
+  affectnet:
+    train: ./dataset/Dataset_AffectNet+/dataset_full/training_set
+    val: ./dataset/Dataset_AffectNet+/dataset_full/validation_set
+  
+  fer2013:
+    train: ./dataset/Dataset_FER-2013/dataset_full/training_set
+    val: ./dataset/Dataset_FER-2013/dataset_full/validation_set
+  
+  face_expression:
+    train: ./dataset/Dataset_Face-Expression-Recognition/dataset_full/training_set
+    val: ./dataset/Dataset_Face-Expression-Recognition/dataset_full/validation_set
+  
+  human_emotions:
+    train: ./dataset/Dataset_Human-Face-Emotions/dataset_full/training_set
+    val: ./dataset/Dataset_Human-Face-Emotions/dataset_full/validation_set
+  
+  raf_db:
+    train: ./dataset/Dataset_RAF_DB/dataset_full/training_set
+    val: ./dataset/Dataset_RAF_DB/dataset_full/validation_set
 
 # Bild-Spezifikationen
 image:

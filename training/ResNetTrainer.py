@@ -22,11 +22,14 @@ class ResNetTrainer:
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
                  dataset: str = 'full',
+                 train_datasets=None,
+                 val_datasets=None,
                  cm_every: int = 1,
                  use_adamw: bool = False,
                  use_scheduler: bool = False,
                  use_label_smoothing: bool = False,
                  use_class_weights: bool = False,
+                 class_limit: int = None,
                  best_model_filename: str = "best.pt",
                  last_model_filename: str = "last.pt", # Inside checkpoints folder in run dir
                  early_stopping_patience: int = 5):
@@ -34,9 +37,12 @@ class ResNetTrainer:
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
         self.dataset = dataset
+        self.train_datasets = train_datasets
+        self.val_datasets = val_datasets
         self.cm_every = cm_every
         self.use_scheduler = use_scheduler
         self.use_class_weights = use_class_weights
+        self.class_limit = class_limit
         self.best_model_filename = best_model_filename
         self.last_model_filename = last_model_filename
         self.early_stopping_patience = early_stopping_patience
@@ -71,7 +77,12 @@ class ResNetTrainer:
         self.scaler = torch.amp.GradScaler(device = self.device.type, enabled = self.use_amp)
         
         # Dataloaders
-        self.train_loader, self.val_loader = get_dataloaders(dataset=self.dataset)
+        self.train_loader, self.val_loader = get_dataloaders(
+            dataset=self.dataset, 
+            train_datasets=self.train_datasets, 
+            val_datasets=self.val_datasets,
+            class_limit=self.class_limit
+        )
         
         # Compute class weights if needed
         if use_class_weights:
@@ -193,9 +204,12 @@ class ResNetTrainer:
             "learning_rate": self.learning_rate,
             "weight_decay": self.weight_decay,
             "dataset": self.dataset,
+            "train_datasets": self.train_datasets,
+            "val_datasets": self.val_datasets,
             "cm_every": self.cm_every,
             "use_scheduler": self.use_scheduler,
             "use_class_weights": self.use_class_weights,
+            "class_limit": self.class_limit,
             "best_model_filename": self.best_model_filename,
             "last_model_filename": self.last_model_filename,
             "device": str(self.device),
@@ -205,7 +219,7 @@ class ResNetTrainer:
             "early_stopping_patience": str(self.early_stopping_patience)
         }
         
-    def train_one_epoch(self):
+    def train_one_epoch(self, epoch):
         """
         Train model for one epoch.
         """
@@ -215,7 +229,7 @@ class ResNetTrainer:
         loss_total = 0.0
         correct, total = 0, 0
         
-        for images, labels in tqdm(self.train_loader, desc=f"Training {self.model_name}"):
+        for images, labels in tqdm(self.train_loader, desc=f"Epoch {epoch+1} [Train]"):
             # Load images to GPU/CPU
             images = images.to(self.device)
             labels = labels.to(self.device)
@@ -256,7 +270,7 @@ class ResNetTrainer:
         all_labels = []
         
         with torch.no_grad():
-            for images, labels in tqdm(self.val_loader, desc="Validating"):
+            for images, labels in tqdm(self.val_loader, desc=f"Epoch {epoch+1} [Val]"):
                 # Load images to GPU/CPU
                 images = images.to(self.device)
                 labels = labels.to(self.device)
@@ -293,9 +307,17 @@ class ResNetTrainer:
         return loss_avg, accuracy, val_f1_macro
     
     
+    def _print_epoch_summary(self, epoch, train_loss, train_accuracy, val_loss, val_accuracy, val_f1_macro, current_lr):
+        """Print formatted epoch summary"""
+        self.logger.info("─" * 66)
+        self.logger.info(f"Epoch {epoch+1}/{self.num_epochs} Summary:")
+        self.logger.info(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_accuracy:.2f}%")
+        self.logger.info(f"  Val Loss:   {val_loss:.4f} | Val Acc:   {val_accuracy:.2f}%")
+        self.logger.info(f"  LR: {current_lr:.6f}")
+        self.logger.info("─" * 66)
+    
     def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
         """Save model to specified path with extra info incl. optimizer and best val acc"""
-        # TODO: Add option for saving scheduler state
         torch.save(
             {
                 "epoch": epoch,
@@ -305,7 +327,7 @@ class ResNetTrainer:
             },
             path,
         )    
-        self.logger.info(f"Saved Model to {path}")
+        self.logger.info(f"Saved best model (val_acc: {best_val_acc:.2f}%) to {path}")
         
 
     def train(self):
@@ -325,26 +347,16 @@ class ResNetTrainer:
         early_stopping = EarlyStopping(patience=self.early_stopping_patience, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
-            self.logger.info(f"Epoch {epoch+1}/{self.num_epochs}")
-            
-            train_loss, train_accuracy = self.train_one_epoch()
+            train_loss, train_accuracy = self.train_one_epoch(epoch)
             val_loss, val_accuracy, val_f1_macro = self.validate(epoch)
             
-            self.logger.info(f"Train Loss: {train_loss:.4f} | Train Accuracy: {train_accuracy:.2f}%")
-            self.logger.info(f"Val Loss: {val_loss:.4f} | Val Accuracy: {val_accuracy:.2f}%")
-            self.logger.info(f"F1 Macro: {val_f1_macro:.4f}")
+            current_lr = self.optimizer.param_groups[0]["lr"]
+            self._print_epoch_summary(epoch, train_loss, train_accuracy, val_loss, val_accuracy, val_f1_macro, current_lr)
             
-            # Use scheduler if enabled
-            if self.use_scheduler:
-                current_lr = self.scheduler.get_last_lr()[0]
-                self.logger.info(f"LR: {current_lr:.6f}") 
-            
-            # Store best model
             if val_accuracy > best_val_acc:
                 best_val_acc = val_accuracy
                 self.save_model(self.checkpoints_path / self.best_model_filename, self.model, self.optimizer, epoch, best_val_acc)
             
-            # Store last model
             self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, best_val_acc)
             
             # Log metrics in run

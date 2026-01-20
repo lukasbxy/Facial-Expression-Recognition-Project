@@ -1,10 +1,24 @@
-# Ignore all images in dataset_full, but keep folder structure
+# Ignore all images in datasets, but keep folder structure
+dataset/**/training_set/*/*.jpg
+dataset/**/training_set/*/*.png
+dataset/**/training_set/*/*.jpeg
+dataset/**/validation_set/*/*.jpg
+dataset/**/validation_set/*/*.png
+dataset/**/validation_set/*/*.jpeg
+
+# Legacy paths
 dataset/dataset_full/training_set/*/*.jpg
 dataset/dataset_full/training_set/*/*.png
 dataset/dataset_full/training_set/*/*.jpeg
 dataset/dataset_full/validation_set/*/*.jpg
 dataset/dataset_full/validation_set/*/*.png
 dataset/dataset_full/validation_set/*/*.jpeg
+dataset/dataset_sample/training_set/*/*.jpg
+dataset/dataset_sample/training_set/*/*.png
+dataset/dataset_sample/training_set/*/*.jpeg
+dataset/dataset_sample/validation_set/*/*.jpg
+dataset/dataset_sample/validation_set/*/*.png
+dataset/dataset_sample/validation_set/*/*.jpeg
 
 # Python
 *.pyc

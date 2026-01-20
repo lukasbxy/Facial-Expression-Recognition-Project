@@ -132,12 +132,12 @@ class CCTTrainer:
         
         self.logger.info(f"Logging initialized. Log file: {log_file}")
         
-    def train_one_epoch(self):
+    def train_one_epoch(self, epoch):
         self.model.train()
         loss_total = 0.0
         correct, total = 0, 0
         
-        for images, labels in tqdm(self.train_loader, desc="Training"):
+        for images, labels in tqdm(self.train_loader, desc=f"Epoch {epoch+1} [Train]"):
             images = images.to(self.device, memory_format=torch.channels_last)
             labels = labels.to(self.device)
             
@@ -173,7 +173,7 @@ class CCTTrainer:
         all_preds, all_labels = [], []
         
         with torch.no_grad():
-            for images, labels in tqdm(self.val_loader, desc="Validating"):
+            for images, labels in tqdm(self.val_loader, desc=f"Epoch {epoch+1} [Val]"):
                 images = images.to(self.device, memory_format=torch.channels_last)
                 labels = labels.to(self.device)
                 
@@ -203,6 +203,15 @@ class CCTTrainer:
             
         return loss_total / total, 100 * correct / total
     
+    def _print_epoch_summary(self, epoch, train_loss, train_accuracy, val_loss, val_accuracy, current_lr):
+        """Print formatted epoch summary"""
+        self.logger.info("─" * 66)
+        self.logger.info(f"Epoch {epoch+1}/{self.num_epochs} Summary:")
+        self.logger.info(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_accuracy:.2f}%")
+        self.logger.info(f"  Val Loss:   {val_loss:.4f} | Val Acc:   {val_accuracy:.2f}%")
+        self.logger.info(f"  LR: {current_lr:.6f}")
+        self.logger.info("─" * 66)
+    
     def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
         model_state = model._orig_mod.state_dict() if hasattr(model, '_orig_mod') else model.state_dict()
         
@@ -212,7 +221,7 @@ class CCTTrainer:
             "optim_state": optimizer.state_dict(),
             "best_val_acc": best_val_acc,
         }, path)    
-        self.logger.info(f"Saved Model to {path}")
+        self.logger.info(f"💾 Saved best model (val_acc: {best_val_acc:.2f}%) to {path}")
 
     def train(self):
         self.logger.info(f"Beginning CCT training for {self.num_epochs} epochs.")
@@ -222,23 +231,22 @@ class CCTTrainer:
         early_stopping = EarlyStopping(patience=5, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
-            self.logger.info(f"\nEpoch {epoch+1}/{self.num_epochs}")
-            
-            train_loss, train_acc = self.train_one_epoch()
+            train_loss, train_acc = self.train_one_epoch(epoch)
             val_loss, val_acc = self.validate(epoch)
             
-            self.logger.info(f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}%")
-            self.logger.info(f"Val Loss:   {val_loss:.4f} | Val Acc:   {val_acc:.2f}%")
-            
-            if self.use_scheduler:
-                self.logger.info(f"LR: {self.scheduler.get_last_lr()[0]:.6f}") 
+            current_lr = self.scheduler.get_last_lr()[0] if self.use_scheduler else self.optimizer.param_groups[0]["lr"]
+            self._print_epoch_summary(epoch, train_loss, train_acc, val_loss, val_acc, current_lr)
             
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
             
             if early_stopping.check(val_acc):
-                self.logger.info(f"\nEarly stopping triggered. Best Acc: {early_stopping.best_value:.2f}%")
+                self.logger.info(f"\n{'='*60}")
+                self.logger.info(f"Early stopping triggered after {epoch+1} epochs.")
+                self.logger.info(f"No improvement in validation accuracy for {early_stopping.patience} epochs.")
+                self.logger.info(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
+                self.logger.info(f"{'='*60}")
                 break
                 
         self.logger.info("\n" + "=" * 60)

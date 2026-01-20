@@ -25,86 +25,139 @@ import os
 import yaml
 import torch
 import numpy as np
-from torch.utils.data import DataLoader, WeightedRandomSampler
+import random
+from torch.utils.data import DataLoader, WeightedRandomSampler, Subset
 from torchvision import datasets, transforms
 
 
-def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path='config.yaml', use_sampler = True):
+def _limit_dataset_classes(dataset, max_samples_per_class):
+    """
+    Limitiert die Anzahl der Samples pro Klasse in einem Dataset.
+    
+    Args:
+        dataset: PyTorch ImageFolder Dataset
+        max_samples_per_class: Maximale Anzahl an Samples pro Klasse
+    
+    Returns:
+        Subset mit limitierten Samples
+    """
+    # Class indices sammeln
+    class_to_indices = {}
+    for idx, (path, class_idx) in enumerate(dataset.samples):
+        if class_idx not in class_to_indices:
+            class_to_indices[class_idx] = []
+        class_to_indices[class_idx].append(idx)
+    
+    # Pro Klasse zufällig samples auswählen
+    selected_indices = []
+    for class_idx, indices in class_to_indices.items():
+        if len(indices) > max_samples_per_class:
+            # Zufällige Auswahl
+            selected = random.sample(indices, max_samples_per_class)
+        else:
+            # Alle nehmen wenn weniger als limit
+            selected = indices
+        selected_indices.extend(selected)
+    
+    print(f"Class limiting: {len(class_to_indices)} classes, "
+          f"avg {max_samples_per_class} samples per class, "
+          f"total {len(selected_indices)} samples")
+    
+    return Subset(dataset, selected_indices)
+
+
+def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', use_sampler=True, class_limit=None):
     """
     Erstellt Training- und Validation-DataLoader basierend auf der Konfiguration.
+    
+    Args:
+        dataset: Legacy parameter für 'sample' oder 'full' (alle 5 Datasets)
+        train_datasets: Liste von Dataset-Namen für Training (z.B. ['affectnet', 'fer2013'])
+        val_datasets: Liste von Dataset-Namen für Validation (z.B. ['raf_db'])
+        batch_size: Batch size für DataLoader
+        num_workers: Anzahl der Worker für DataLoader
+        config_path: Pfad zur config.yaml
+        use_sampler: Ob WeightedRandomSampler verwendet werden soll
+        class_limit: Maximale Anzahl an Bildern pro Klasse (None für kein Limit)
+    
+    Returns:
+        train_loader, val_loader: PyTorch DataLoader
     """
     
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     
     img_size = config['image']['size']
-    train_path = config['dataset'][dataset]['train']
-    val_path = config['dataset'][dataset]['val']
     
-    if not os.path.exists(train_path) or not os.path.exists(val_path):
-        raise FileNotFoundError(f"Dataset-Pfade nicht gefunden. Bitte config.yaml prüfen.")
+    # Dataset-Auswahl logik
+    if train_datasets is None and val_datasets is None:
+        # Legacy mode: 'sample' oder 'full'
+        if dataset == 'full':
+            # Alle 5 Datasets für Training und Validation
+            train_datasets = ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
+            val_datasets = ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
+        elif dataset == 'sample':
+            # Sample Dataset (für schnelle Tests)
+            train_datasets = ['sample']
+            val_datasets = ['sample']
+        else:
+            raise ValueError(f"Unknown dataset: {dataset}")
     
+    # Pfade sammeln
+    train_paths = []
+    val_paths = []
+    
+    for ds_name in train_datasets:
+        if ds_name in config['dataset']:
+            train_paths.append(config['dataset'][ds_name]['train'])
+        else:
+            raise ValueError(f"Dataset '{ds_name}' nicht in config.yaml gefunden")
+    
+    for ds_name in val_datasets:
+        if ds_name in config['dataset']:
+            val_paths.append(config['dataset'][ds_name]['val'])
+        else:
+            raise ValueError(f"Dataset '{ds_name}' nicht in config.yaml gefunden")
+    
+    # Prüfen ob Pfade existieren
+    for path in train_paths + val_paths:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Dataset-Pfad nicht gefunden: {path}")
     
     # ===================================================================
     # DATA AUGMENTATION - Training Transforms
-    # ===================================================================
-    # Diese Transformationen werden NUR auf die Trainingsdaten angewendet,
-    # um die Datenmenge künstlich zu vergrößern und das Modell robuster
-    # gegen Variationen zu machen.
     # ===================================================================
     
     aug_config = config.get('augmentation', {})
     
     train_transform = transforms.Compose([
-        # 1. Random Resized Crop: Zufälliger Ausschnitt (90-100%)
-        #    -> Simuliert unterschiedliche Zoom-Level und Gesichtspositionierungen
         transforms.RandomResizedCrop(
             size=img_size,
             scale=(aug_config.get('crop_scale_min', 0.9), 
                    aug_config.get('crop_scale_max', 1.0))
         ),
-        
-        # 2. Random Rotation: ±10 Grad
-        #    -> Simuliert leicht gedrehte Köpfe/Kamerapositionen
         transforms.RandomRotation(
             degrees=aug_config.get('rotation_degrees', 10)
         ),
-        
-        # 3. Random Horizontal Flip: 50% Wahrscheinlichkeit
-        #    -> Spiegelt Gesichter links/rechts (wichtig für Symmetrie-Invarianz)
-        #    -> NICHT vertikal, da umgedrehte Gesichter unrealistisch sind
         transforms.RandomHorizontalFlip(
             p=aug_config.get('horizontal_flip_prob', 0.5)
         ),
-        
-        # 4. Color Jitter: Helligkeit, Kontrast, Sättigung variieren
-        #    -> Simuliert unterschiedliche Lichtverhältnisse und Kameraeinstellungen
         transforms.ColorJitter(
             brightness=aug_config.get('brightness', 0.2),
             contrast=aug_config.get('contrast', 0.2),
             saturation=aug_config.get('saturation', 0.1)
         ),
-        
-        # 5. To Tensor: Konvertiert PIL Image zu PyTorch Tensor
-        #    -> Normalisiert Pixelwerte auf [0, 1]
         transforms.ToTensor(),
-        
-        # 6. Random Erasing: Kleine Bereiche zufällig ausradieren (Cutout)
-        #    -> Macht das Modell robust gegen Verdeckungen (z.B. Haare, Hände)
-        #    -> Wird NACH ToTensor angewendet (arbeitet auf Tensoren)
         transforms.RandomErasing(
             p=aug_config.get('erase_prob', 0.3),
             scale=(aug_config.get('erase_scale_min', 0.02), 
                    aug_config.get('erase_scale_max', 0.10)),
-            ratio=(0.3, 3.3)  # Seitenverhältnis der ausradierten Bereiche
+            ratio=(0.3, 3.3)
         ),
     ])
     
     # ===================================================================
     # VALIDATION Transforms - KEINE Augmentation!
-    # ===================================================================
-    # Validierungsdaten werden NICHT augmentiert, um eine faire und
-    # konsistente Evaluation zu gewährleisten.
     # ===================================================================
     
     val_transform = transforms.Compose([
@@ -112,28 +165,73 @@ def get_dataloaders(dataset='sample', batch_size=32, num_workers=4, config_path=
         transforms.ToTensor(),
     ])
     
+    # Datasets erstellen und kombinieren
+    train_datasets_list = []
+    for path in train_paths:
+        dataset = datasets.ImageFolder(root=path, transform=train_transform)
+        
+        # Class Limiting für Training
+        if class_limit is not None:
+            dataset = _limit_dataset_classes(dataset, class_limit)
+            print(f"Limited training dataset to {class_limit} samples per class")
+        
+        train_datasets_list.append(dataset)
     
-    # Datasets mit entsprechenden Transforms laden
-    train_dataset = datasets.ImageFolder(root=train_path, transform=train_transform)
-    val_dataset = datasets.ImageFolder(root=val_path, transform=val_transform)
-
-    # Sampler erstellen 
-    targets = np.array(train_dataset.targets)
-    class_counts = np.bincount(targets)
-    class_weights = 1.0 / class_counts
-    sample_weights = class_weights[targets]
-    train_sampler = WeightedRandomSampler(
-        weights = torch.as_tensor(sample_weights, dtype = torch.double),
-        num_samples = len(train_dataset),
-        replacement = True
-    )
+    val_datasets_list = []
+    for path in val_paths:
+        val_datasets_list.append(datasets.ImageFolder(root=path, transform=val_transform))
+    
+    # Datasets kombinieren mit ConcatDataset
+    from torch.utils.data import ConcatDataset
+    train_dataset = ConcatDataset(train_datasets_list) if len(train_datasets_list) > 1 else train_datasets_list[0]
+    val_dataset = ConcatDataset(val_datasets_list) if len(val_datasets_list) > 1 else val_datasets_list[0]
+    
+    # Sampler erstellen (nur für Training)
+    if use_sampler:
+        # Targets von allen Sub-Datasets sammeln (auch mit Subset)
+        all_targets = []
+        for ds in train_datasets_list:
+            if hasattr(ds, 'targets'):
+                all_targets.extend(ds.targets)
+            elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
+                # Subset Fall: Original targets aus dem dataset holen
+                indices = ds.indices
+                original_targets = ds.dataset.targets
+                all_targets.extend([original_targets[i] for i in indices])
+        targets = np.array(all_targets)
+    else:
+        # Für Subset oder einzelne Datasets
+        if isinstance(train_dataset, ConcatDataset):
+            all_targets = []
+            for ds in train_datasets_list:
+                if hasattr(ds, 'targets'):
+                    all_targets.extend(ds.targets)
+                elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
+                    indices = ds.indices
+                    original_targets = ds.dataset.targets
+                    all_targets.extend([original_targets[i] for i in indices])
+            targets = np.array(all_targets)
+        else:
+            targets = np.array(train_dataset.targets) if hasattr(train_dataset, 'targets') else np.array([])
+    
+    if use_sampler and len(targets) > 0:
+        class_counts = np.bincount(targets)
+        class_weights = 1.0 / class_counts
+        sample_weights = class_weights[targets]
+        train_sampler = WeightedRandomSampler(
+            weights = torch.as_tensor(sample_weights, dtype = torch.double),
+            num_samples = len(targets),
+            replacement = True
+        )
+    else:
+        train_sampler = None
     
     # DataLoader erstellen
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
-        sampler = train_sampler if use_sampler else None,
-        shuffle= not use_sampler,
+        sampler=train_sampler,
+        shuffle=train_sampler is None,
         num_workers=num_workers,
         pin_memory=True
     )

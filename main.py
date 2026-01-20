@@ -23,10 +23,23 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Legacy examples (still work)
   python main.py --model resnet18_se_variant --epochs 50 --lr 0.001
   python main.py --model resnet18 --batch-size 64 --use-adamw
   python main.py --model resnet18_se --epochs 100 --use-scheduler --use-label-smoothing
   python main.py --model resnet18 --use-class-weights --use-label-smoothing
+  
+  # Dataset selection with "all" shortcut
+  python main.py --model resnet18 --train-datasets all --val-datasets all
+  python main.py --model resnet18 --train-datasets all --val-datasets raf_db
+  python main.py --model resnet18 --train-datasets affectnet fer2013 --val-datasets human_emotions
+  
+  # Class limiting (helps with class imbalance)
+  python main.py --model resnet18 --train-datasets all --val-datasets all --class-limit 50000
+  python main.py --model resnet18 --train-datasets all --val-datasets raf_db --class-limit 30000
+  
+  # Combined examples
+  python main.py --model resnet18 --train-datasets all --val-datasets all --class-limit 40000 --use-adamw --use-scheduler
         """
     )
     
@@ -108,7 +121,23 @@ Examples:
         type=str,
         default='full',
         choices=['full', 'sample'],
-        help='Select the dataset (default: full)'
+        help='Select the dataset (default: full) - Legacy option'
+    )
+    
+    parser.add_argument(
+        '--train-datasets',
+        type=str,
+        nargs='+',
+        choices=['all', 'affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db'],
+        help='Training datasets (space-separated). Use "all" for all 5 datasets'
+    )
+    
+    parser.add_argument(
+        '--val-datasets',
+        type=str,
+        nargs='+',
+        choices=['all', 'affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db'],
+        help='Validation datasets (space-separated). Use "all" for all 5 datasets'
     )
     
     parser.add_argument(
@@ -118,7 +147,25 @@ Examples:
         help = "Set patience (in epochs) for Early Stopping."
     )
     
+    parser.add_argument(
+        '--class-limit',
+        type=int,
+        default=None,
+        help='Limit maximum number of samples per class (e.g., 50000). Helps with class imbalance.'
+    )
+    
     args = parser.parse_args()
+    
+    # Validate dataset arguments
+    if (args.train_datasets is None) != (args.val_datasets is None):
+        parser.error("Both --train-datasets and --val-datasets must be specified together or not at all.")
+    
+    # Handle 'all' shortcut
+    all_datasets = ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
+    if args.train_datasets and 'all' in args.train_datasets:
+        args.train_datasets = all_datasets
+    if args.val_datasets and 'all' in args.val_datasets:
+        args.val_datasets = all_datasets
     
     # Load model
     print(f"Loading model: {args.model}")
@@ -146,11 +193,14 @@ Examples:
         learning_rate=args.lr,
         weight_decay=args.weight_decay,
         dataset=args.dataset,
+        train_datasets=args.train_datasets,
+        val_datasets=args.val_datasets,
         cm_every=args.cm_every,
         use_adamw=args.use_adamw,
         use_scheduler=args.use_scheduler,
         use_label_smoothing=args.use_label_smoothing,
         use_class_weights=args.use_class_weights,
+        class_limit=args.class_limit,
         early_stopping_patience=args.patience   
     )
     
