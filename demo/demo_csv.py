@@ -115,7 +115,7 @@ def main():
     parser.add_argument(
         "--output_csv",
         type = str,
-        default = str(Path("model_metrics") / "inference_csv" / "predictions.csv"),
+        default = str(PROJECT_ROOT/"demo" / "csv" / "predictions.csv"),
         help = "Output CSV file name",
     )
     
