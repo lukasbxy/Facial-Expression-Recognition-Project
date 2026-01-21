@@ -31,7 +31,7 @@ import customtkinter as ctk
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-from models import ResNet18
+from models import ResNet18_SE_Variant 
 
 # === KONFIGURATION ===
 EMOTIONS = ["Happiness", "Surprise", "Sadness", "Anger", "Disgust", "Fear"]
@@ -85,15 +85,26 @@ class App:
 
     # === MODELL ===
     def _get_checkpoints(self):
-        pts = [str(p.relative_to(PROJECT_ROOT)) for d in (PROJECT_ROOT / "models").iterdir() 
-               if d.is_dir() and not d.name.startswith('_') and (d / "checkpoints").exists()
-               for p in (d / "checkpoints").glob("*.pt")]
-        return pts or ["models/ResNet18/checkpoints/best.pt"]
+        """Get checkpoints from runs/ResNet18_SE_Variant"""
+        pts = []
+        
+        # Search runs/ResNet18_SE_Variant/*/checkpoints/*.pt (most recent first)
+        runs_dir = PROJECT_ROOT / "runs" / "ResNet18_SE_Variant"
+        if runs_dir.exists():
+            # Get all timestamp directories, sort by name (newest first)
+            timestamp_dirs = sorted([d for d in runs_dir.iterdir() if d.is_dir()], reverse=True)
+            for timestamp_dir in timestamp_dirs:
+                checkpoints_dir = timestamp_dir / "checkpoints"
+                if checkpoints_dir.exists():
+                    for p in checkpoints_dir.glob("*.pt"):
+                        pts.append(str(p.relative_to(PROJECT_ROOT)))
+        
+        return pts if pts else []
 
     def _load_model(self, _=None):
         path = PROJECT_ROOT / self.ckpt_var.get()
         if not path.exists(): return
-        self.model = ResNet18()
+        self.model = ResNet18_SE_Variant(num_classes=6)
         self.model.load_state_dict(torch.load(path, map_location=self.device, weights_only=False)['model_state'])
         self.model.to(self.device).eval()
         self.gradcam = GradCAM(self.model, self.model.layer4)
@@ -107,8 +118,10 @@ class App:
         ctk.CTkLabel(head, text="FACIAL EXPRESSION MODEL DEMO", font=("Helvetica", 24, "bold")).pack(side=tk.LEFT, padx=30, pady=20)
         
         pts = self._get_checkpoints()
-        self.ckpt_var = ctk.StringVar(value=pts[0])
-        self.ckpt_menu = ctk.CTkOptionMenu(head, variable=self.ckpt_var, values=pts, command=self._load_model, width=300)
+        if not pts:
+            messagebox.showwarning("Warnung", "Keine Checkpoints gefunden! Bitte zuerst ein Modell trainieren.")
+        self.ckpt_var = ctk.StringVar(value=pts[0] if pts else "")
+        self.ckpt_menu = ctk.CTkOptionMenu(head, variable=self.ckpt_var, values=pts if pts else ["Keine Checkpoints"], command=self._load_model, width=300)
         self.ckpt_menu.pack(side=tk.LEFT, padx=20)
         
         # Buttons
