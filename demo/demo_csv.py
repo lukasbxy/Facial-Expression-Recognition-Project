@@ -51,7 +51,10 @@ def load_model(model_weights,device):
     return model 
 
 def classify_image(model, image_path,device):
-    transform = transforms.ToTensor()
+    transform = transforms.Compose([
+        transforms.Resize((64, 64)),
+        transforms.ToTensor(),
+    ])
     image = Image.open(image_path).convert("RGB")
     img_tensor = transform(image).unsqueeze(0).to(device)
 

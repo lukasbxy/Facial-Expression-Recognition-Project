@@ -1,9 +1,10 @@
-# Python 3.14.2 (latest stable version as of January 2026)
+# Python 3.12 (latest stable version as of January 2026)
 
 torch==2.9.1
 torchvision
 torchaudio
 numpy
+pandas
 scikit-learn
 matplotlib
 PyYAML  # Für config.yaml Laden

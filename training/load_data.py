@@ -66,7 +66,7 @@ def _limit_dataset_classes(dataset, max_samples_per_class):
     return Subset(dataset, selected_indices)
 
 
-def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', use_sampler=True, class_limit=None):
+def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', class_limit=None):
     """
     Erstellt Training- und Validation-DataLoader basierend auf der Konfiguration.
     
@@ -77,7 +77,6 @@ def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, ba
         batch_size: Batch size für DataLoader
         num_workers: Anzahl der Worker für DataLoader
         config_path: Pfad zur config.yaml
-        use_sampler: Ob WeightedRandomSampler verwendet werden soll
         class_limit: Maximale Anzahl an Bildern pro Klasse (None für kein Limit)
     
     Returns:
@@ -186,35 +185,21 @@ def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, ba
     train_dataset = ConcatDataset(train_datasets_list) if len(train_datasets_list) > 1 else train_datasets_list[0]
     val_dataset = ConcatDataset(val_datasets_list) if len(val_datasets_list) > 1 else val_datasets_list[0]
     
-    # Sampler erstellen (nur für Training)
-    if use_sampler:
-        # Targets von allen Sub-Datasets sammeln (auch mit Subset)
-        all_targets = []
-        for ds in train_datasets_list:
-            if hasattr(ds, 'targets'):
-                all_targets.extend(ds.targets)
-            elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
-                # Subset Fall: Original targets aus dem dataset holen
-                indices = ds.indices
-                original_targets = ds.dataset.targets
-                all_targets.extend([original_targets[i] for i in indices])
-        targets = np.array(all_targets)
-    else:
-        # Für Subset oder einzelne Datasets
-        if isinstance(train_dataset, ConcatDataset):
-            all_targets = []
-            for ds in train_datasets_list:
-                if hasattr(ds, 'targets'):
-                    all_targets.extend(ds.targets)
-                elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
-                    indices = ds.indices
-                    original_targets = ds.dataset.targets
-                    all_targets.extend([original_targets[i] for i in indices])
-            targets = np.array(all_targets)
-        else:
-            targets = np.array(train_dataset.targets) if hasattr(train_dataset, 'targets') else np.array([])
+    # Sampler erstellen (nur für Training) - immer verwenden
+    # Targets von allen Sub-Datasets sammeln (auch mit Subset)
+    all_targets = []
+    for ds in train_datasets_list:
+        if hasattr(ds, 'targets'):
+            all_targets.extend(ds.targets)
+        elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
+            # Subset Fall: Original targets aus dem dataset holen
+            indices = ds.indices
+            original_targets = ds.dataset.targets
+            all_targets.extend([original_targets[i] for i in indices])
+    targets = np.array(all_targets)
     
-    if use_sampler and len(targets) > 0:
+    # Immer WeightedRandomSampler verwenden
+    if len(targets) > 0:
         class_counts = np.bincount(targets)
         class_weights = 1.0 / class_counts
         sample_weights = class_weights[targets]
@@ -231,7 +216,7 @@ def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, ba
         train_dataset,
         batch_size=batch_size,
         sampler=train_sampler,
-        shuffle=train_sampler is None,
+        shuffle=False,  # shuffle=False when using sampler
         num_workers=num_workers,
         pin_memory=True
     )

@@ -266,6 +266,8 @@ class ResNetTrainer:
         self.val_f1_macro.reset()
         self.model.eval()
         loss_total, correct, total = 0.0, 0, 0
+        
+        do_cm = (self.cm_every > 0) and ((epoch+1) % self.cm_every == 0)
         all_preds = [] 
         all_labels = []
         
@@ -284,22 +286,24 @@ class ResNetTrainer:
                 loss_total += loss.item() * labels.size(0)
                 self.val_f1_macro.update(predicted, labels) # Update F1 scoring
 
-                all_preds.append(predicted.detach().cpu())
-                all_labels.append(labels.detach().cpu())
+                if do_cm:
+                    all_preds.append(predicted.detach().cpu())
+                    all_labels.append(labels.detach().cpu())
                 
-            labels_np = torch.cat(all_labels).numpy()
-            preds_np  = torch.cat(all_preds).numpy()
-            
-            # Save confusion matrics
-            cm_path = create_cm(labels=labels_np,
-                             preds=preds_np,
-                             class_names = self.val_loader.dataset.classes,
-                             epoch = epoch,
-                             model_name = self.model_name,
-                             timestamp = self.timestamp,
-                             out_dir = self.run_dir / "confusion_matrices")
-            
-            self.logger.info(f"Confusion matrix saved at {cm_path}")
+            if do_cm and len(all_preds) > 0:
+                labels_np = torch.cat(all_labels).numpy()
+                preds_np  = torch.cat(all_preds).numpy()
+                
+                # Save confusion matrics
+                cm_path = create_cm(labels=labels_np,
+                                 preds=preds_np,
+                                 class_names = self.val_loader.dataset.classes,
+                                 epoch = epoch,
+                                 model_name = self.model_name,
+                                 timestamp = self.timestamp,
+                                 out_dir = self.run_dir / "confusion_matrices")
+                
+                self.logger.info(f"Confusion matrix saved at {cm_path}")
             
         loss_avg = loss_total / total
         accuracy = 100 * correct / total
