@@ -18,10 +18,10 @@ Windows (PowerShell):
     pip install -r requirements.txt
 
 3) Run
-    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model_path "PATH/TO/CHECKPOINT.pt"
+    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model "Choose from ['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct']" --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
-    python demo/demo_csv.py --folder_path "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
+    python demo/demo_csv.py --folder_path "..." --model "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
 '''
 
 
@@ -37,18 +37,32 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from models import ResNet18_SE_Variant
+from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34, CCT
 
 EMOTIONS = ["Happiness", "Surprise", "Sadness", "Anger", "Disgust", "Fear"]
 
 
-def load_model(model_weights,device): 
-    model = ResNet18_SE_Variant(num_classes=6)
+def load_model(model_name,model_weights,device):
+    model_dict = {
+        'resnet18': ResNet18,
+        'resnet18_se': ResNet18_SE,
+        'resnet18_se_variant': ResNet18_SE_Variant,
+        'resnet34': ResNet34,
+        'cct': CCT
+    }
+    if model_name.lower() not in model_dict:
+        raise ValueError(f"Unknown model: {model_name}. Available: {list(model_dict.keys())}")
+    model = model_dict[model_name.lower()](num_classes=6)
     checkpoint = torch.load(model_weights, map_location=device, weights_only=False)
-    model.load_state_dict(checkpoint['model_state'])
+    try:
+        model.load_state_dict(checkpoint['model_state'])
+    except RuntimeError as e:
+        raise RuntimeError(
+            f"Model weights not compatible with model '{model_name}'.\n{e}"
+        )
     model.to(device)
     model.eval()
-    return model 
+    return model
 
 def classify_image(model, image_path,device):
     transform = transforms.Compose([
@@ -64,7 +78,7 @@ def classify_image(model, image_path,device):
 
     return preds.cpu().numpy()[0]
 
-def write_csv(folder_path, model_weights,output_csv):
+def write_csv(folder_path,model_name, model_weights,output_csv):
 
     if torch.cuda.is_available():
         device = torch.device('cuda')
@@ -75,7 +89,7 @@ def write_csv(folder_path, model_weights,output_csv):
 
     print(f"Using Device: {device}")
 
-    model = load_model(model_weights,device)
+    model = load_model(model_name, model_weights,device)
     print(f"Using model {model.__class__.__name__}")
 
     folder = Path(folder_path)
@@ -107,6 +121,14 @@ def main():
     )
 
     parser.add_argument(
+        "--model",
+        type = str,
+        default='resnet18_se_variant',
+        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct'],
+        help = "Model selection",
+    )
+
+    parser.add_argument(
         "--model_path",
         type = str,
         required = True,
@@ -125,6 +147,7 @@ def main():
     try:
         write_csv(
             folder_path=args.folder_path,
+            model_name=args.model,
             model_weights=args.model_path,
             output_csv=args.output_csv,
         )
