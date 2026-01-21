@@ -9,20 +9,12 @@ def create_cm(labels,
           model_name: str,
           timestamp = None,
           normalize: str = "true",
-          out_dir = None,
+          out_dir: Path = None,
           ):
     
-    repo_root = Path(__file__).resolve()
+    if out_dir is None:
+        raise ValueError("out_dir must be provided")
     
-    while not(repo_root / "model_metrics").exists():
-        if repo_root == repo_root.parent:
-             repo_root = Path(".").resolve()
-             break 
-        repo_root = repo_root.parent
-    
-    if not out_dir:    
-        out_dir = repo_root / "model_metrics" / "confusion_matrices"
-        
     out_dir.mkdir(parents=True, exist_ok=True)
     
     # Use timestamp if provided, otherwise use old naming scheme
