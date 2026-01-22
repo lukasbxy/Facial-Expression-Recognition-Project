@@ -36,3 +36,7 @@ logs/
 
 # Ignore runs
 runs/*/
+
+# Ignore old legacy folders
+models/*/checkpoints
+model_metrics
