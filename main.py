@@ -1,5 +1,5 @@
 import argparse
-from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant
+from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34
 from training.ResNetTrainer import ResNetTrainer
 
 
@@ -9,6 +9,7 @@ def get_model(model_name: str):
         'resnet18': ResNet18,
         'resnet18_se': ResNet18_SE,
         'resnet18_se_variant': ResNet18_SE_Variant,
+        'resnet34': ResNet34,
     }
     
     if model_name.lower() not in models:
@@ -46,7 +47,7 @@ Examples:
         '--model',
         type=str,
         default='resnet18_se_variant',
-        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant'],
+        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34'],
         help='Select the model (default: resnet18_se_variant)'
     )
     
