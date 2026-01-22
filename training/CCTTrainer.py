@@ -1,15 +1,15 @@
-"""
-Implementierung eines Training-Loops für CCT (models/CCT)
-"""
 from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 import logging
 import sys
 from training.create_cm import create_cm
+import csv
+from torchmetrics.classification import MulticlassF1Score
 
 from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
@@ -21,53 +21,105 @@ class CCTTrainer:
                  num_epochs: int = 30,
                  learning_rate: float = 0.0005,
                  weight_decay: float = 0.05,
+                 train_datasets=None,
+                 val_datasets=None,
                  cm_every: int = 5,
                  use_scheduler: bool = True,
-                 use_label_smoothing: bool = True):
+                 use_label_smoothing: bool = True,
+                 use_class_weights: bool = False,
+                 class_limit: int = None,
+                 best_model_filename: str = "best.pt",
+                 last_model_filename: str = "last.pt",
+                 early_stopping_patience: int = 5):
         
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
+        self.train_datasets = train_datasets
+        self.val_datasets = val_datasets
         self.cm_every = cm_every
         self.use_scheduler = use_scheduler
+        self.use_class_weights = use_class_weights
+        self.class_limit = class_limit
+        self.best_model_filename = best_model_filename
+        self.last_model_filename = last_model_filename
+        self.early_stopping_patience = early_stopping_patience
         
         # Store model name and generate timestamp
         self.model_name = model.__class__.__name__
-        self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M")
+        self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M.%S")
         
-        # Update filepath with timestamp naming scheme
-        self.filepath = Path("models") / self.model_name / "checkpoints" / f"{self.timestamp}_Checkpoint_{self.model_name}.pt"
-        self.filepath.parent.mkdir(parents=True, exist_ok=True)
+        # Setup logging and checkpoints
+        self._setup_checkpoints_logging()
         
-        # Setup logging
-        self._setup_logging()
-        
-        # --- OPTIMIZATION: CUDA Benchmark ---
-        torch.backends.cudnn.benchmark = True
+        # Create metrics file
+        self._setup_metrics()
         
         # Set Device
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
-        elif torch.backends.mps.is_available():
+        elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
             self.device = torch.device('mps')
         else:
             self.device = torch.device('cpu')
         self.logger.info(f"Using Device: {self.device}")
         
-        # --- OPTIMIZATION: Channels Last Memory Format ---
-        self.model = model.to(self.device, memory_format=torch.channels_last)
+        # --- CUDA-ONLY OPTIMIZATIONS ---
+        # channels_last and torch.compile() only work reliably on CUDA
+        self.use_cuda_optimizations = (self.device.type == "cuda")
         
-        # --- OPTIMIZATION: Model Compilation (PyTorch 2.0+) ---
-        try:
-            self.model = torch.compile(self.model)
-            self.logger.info("Model compiled with torch.compile() for speed.")
-        except Exception as e:
-            self.logger.info(f"Skipping torch.compile: {e}")
+        if self.use_cuda_optimizations:
+            torch.backends.cudnn.benchmark = True
+            self.model = model.to(self.device, memory_format=torch.channels_last)
+            try:
+                self.model = torch.compile(self.model)
+                self.logger.info("Model compiled with torch.compile() for speed.")
+            except Exception as e:
+                self.logger.info(f"Skipping torch.compile: {e}")
+        else:
+            self.model = model.to(self.device)
+            self.logger.info("Running without CUDA optimizations (channels_last, torch.compile).")
 
         self.use_amp = (self.device.type == "cuda")
         self.scaler = torch.amp.GradScaler(device=self.device.type, enabled=self.use_amp)
         
-        self.train_loader, self.val_loader = get_dataloaders('full')
+        # Dataloaders
+        self.train_loader, self.val_loader, self.class_names = get_dataloaders(
+            train_datasets=self.train_datasets,
+            val_datasets=self.val_datasets,
+            class_limit=self.class_limit
+        )
+        
+        # Compute class weights if needed
+        if use_class_weights:
+            all_targets = []
+            train_dataset = self.train_loader.dataset
+            if hasattr(train_dataset, 'datasets'):
+                # ConcatDataset case
+                for ds in train_dataset.datasets:
+                    if hasattr(ds, 'targets'):
+                        all_targets.extend(ds.targets)
+                    elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
+                        # Subset case
+                        indices = ds.indices
+                        original_targets = ds.dataset.targets
+                        all_targets.extend([original_targets[i] for i in indices])
+            elif hasattr(train_dataset, 'targets'):
+                all_targets = list(train_dataset.targets)
+            elif hasattr(train_dataset, 'dataset') and hasattr(train_dataset.dataset, 'targets'):
+                # Single Subset case
+                indices = train_dataset.indices
+                original_targets = train_dataset.dataset.targets
+                all_targets = [original_targets[i] for i in indices]
+            
+            targets = np.array(all_targets)
+            class_counts = np.bincount(targets)
+            class_weights = 1.0 / class_counts
+            class_weights = class_weights / class_weights.sum() * len(class_counts)
+            class_weights = torch.FloatTensor(class_weights).to(self.device)
+            self.logger.info(f"Using class weights: {class_weights}")
+        else:
+            class_weights = None
         
         # --- OPTIMIZER CHANGE ---
         # Fixed logic: CCT/ViT should almost always use AdamW.
@@ -89,22 +141,38 @@ class CCTTrainer:
                 div_factor=25.0,        # Initial LR = max_lr / 25
                 final_div_factor=1000.0 # Final LR = initial_LR / 1000
             )
+        else:
+            self.scheduler = None
             
         if use_label_smoothing:
-            self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+            if use_class_weights and class_weights is not None:
+                self.criterion = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.1)
+            else:
+                self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
         else:
-            self.criterion = nn.CrossEntropyLoss()
+            if use_class_weights and class_weights is not None:
+                self.criterion = nn.CrossEntropyLoss(weight=class_weights)
+            else:
+                self.criterion = nn.CrossEntropyLoss()
+        
+        # Setup F1 Score
+        self.num_classes = len(self.class_names)
+        self.val_f1_macro = MulticlassF1Score(num_classes=self.num_classes, average="macro").to(self.device)
         
         self.logger.info("CCT Trainer initialized.")
         
-    def _setup_logging(self):
-        """Setup logging to both console and file"""
-        # Create logs directory if it doesn't exist
-        log_dir = Path("logs")
+    def _setup_checkpoints_logging(self):
+        """Setup logging and file_system"""
+        # Create runs directory if it doesn't exist
+        log_dir = Path("runs")
         log_dir.mkdir(parents=True, exist_ok=True)
         
+        # Create folder for model run
+        self.run_dir = log_dir / self.model_name / self.timestamp
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+        
         # Create log file with timestamp
-        log_file = log_dir / f"{self.timestamp}_Log_{self.model_name}.log"
+        log_file = self.run_dir / "train.log"
         
         # Configure logger
         self.logger = logging.getLogger(f"{self.model_name}_{self.timestamp}")
@@ -122,7 +190,7 @@ class CCTTrainer:
         console_handler.setLevel(logging.INFO)
         
         # Formatter
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('[%(asctime)s] %(message)s', datefmt="%Y-%m-%d %H:%M:%S")
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
         
@@ -130,7 +198,47 @@ class CCTTrainer:
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
         
-        self.logger.info(f"Logging initialized. Log file: {log_file}")
+        # setup checkpoint folders
+        self.checkpoints_path = self.run_dir / "checkpoints"
+        self.checkpoints_path.mkdir(parents=True, exist_ok=True)
+        
+        self.logger.info(f"Logging initialized. Run directory: {self.run_dir}")
+        
+    def _setup_metrics(self):
+        self.metrics_path = self.run_dir / "metrics.csv"
+        self._metrics_file = self.metrics_path.open("a", newline="")
+        self._metrics_writer = None
+        
+    def _log_metrics(self, metrics: dict):
+        if self._metrics_writer is None:
+            self._metrics_writer = csv.DictWriter(
+                self._metrics_file,
+                fieldnames=list(metrics.keys())
+            )
+            self._metrics_writer.writeheader()
+        self._metrics_writer.writerow(metrics)
+        self._metrics_file.flush()
+        
+    def _get_config(self):
+        """Print out selected config of trainer for logging purposes!"""
+        return {
+            "num_epochs": self.num_epochs,
+            "learning_rate": self.learning_rate,
+            "weight_decay": self.weight_decay,
+            "train_datasets": self.train_datasets,
+            "val_datasets": self.val_datasets,
+            "cm_every": self.cm_every,
+            "use_scheduler": self.use_scheduler,
+            "use_class_weights": self.use_class_weights,
+            "class_limit": self.class_limit,
+            "best_model_filename": self.best_model_filename,
+            "last_model_filename": self.last_model_filename,
+            "device": str(self.device),
+            "model.class": self.model_name,
+            "scheduler": self.scheduler.__class__.__name__ if self.use_scheduler else None,
+            "optimizer": self.optimizer.__class__.__name__,
+            "early_stopping_patience": str(self.early_stopping_patience)
+        }
         
     def train_one_epoch(self, epoch):
         self.model.train()
@@ -138,7 +246,10 @@ class CCTTrainer:
         correct, total = 0, 0
         
         for images, labels in tqdm(self.train_loader, desc=f"Epoch {epoch+1} [Train]"):
-            images = images.to(self.device, memory_format=torch.channels_last)
+            if self.use_cuda_optimizations:
+                images = images.to(self.device, memory_format=torch.channels_last)
+            else:
+                images = images.to(self.device)
             labels = labels.to(self.device)
             
             self.optimizer.zero_grad(set_to_none=True)
@@ -166,6 +277,8 @@ class CCTTrainer:
         return loss_total / total, 100 * correct / total
     
     def validate(self, epoch):
+        """Validate module on validation data"""
+        self.val_f1_macro.reset()
         self.model.eval()
         loss_total, correct, total = 0.0, 0, 0
 
@@ -174,7 +287,10 @@ class CCTTrainer:
         
         with torch.no_grad():
             for images, labels in tqdm(self.val_loader, desc=f"Epoch {epoch+1} [Val]"):
-                images = images.to(self.device, memory_format=torch.channels_last)
+                if self.use_cuda_optimizations:
+                    images = images.to(self.device, memory_format=torch.channels_last)
+                else:
+                    images = images.to(self.device)
                 labels = labels.to(self.device)
                 
                 with torch.autocast(device_type=self.device.type, enabled=self.use_amp):
@@ -185,6 +301,7 @@ class CCTTrainer:
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
                 loss_total += loss.item() * labels.size(0)
+                self.val_f1_macro.update(predicted, labels) # Update F1 scoring
 
                 if do_cm:
                     all_preds.append(predicted.detach().cpu())
@@ -195,24 +312,29 @@ class CCTTrainer:
             preds_np  = torch.cat(all_preds).numpy()
             cm_path = create_cm(labels=labels_np,
                              preds=preds_np,
-                             class_names=self.val_loader.dataset.classes,
+                             class_names=self.class_names,
                              epoch=epoch,
                              model_name=self.model_name,
-                             timestamp=self.timestamp)
+                             timestamp=self.timestamp,
+                             out_dir=self.run_dir / "confusion_matrices")
             self.logger.info(f"Confusion matrix saved at {cm_path}")
             
-        return loss_total / total, 100 * correct / total
+        loss_avg = loss_total / total
+        accuracy = 100 * correct / total
+        val_f1_macro = float(self.val_f1_macro.compute().detach().cpu())
+        return loss_avg, accuracy, val_f1_macro
     
-    def _print_epoch_summary(self, epoch, train_loss, train_accuracy, val_loss, val_accuracy, current_lr):
+    def _print_epoch_summary(self, epoch, train_loss, train_accuracy, val_loss, val_accuracy, val_f1_macro, current_lr):
         """Print formatted epoch summary"""
         self.logger.info("─" * 66)
         self.logger.info(f"Epoch {epoch+1}/{self.num_epochs} Summary:")
         self.logger.info(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_accuracy:.2f}%")
-        self.logger.info(f"  Val Loss:   {val_loss:.4f} | Val Acc:   {val_accuracy:.2f}%")
+        self.logger.info(f"  Val Loss:   {val_loss:.4f} | Val Acc:   {val_accuracy:.2f}% | F1: {val_f1_macro:.4f}")
         self.logger.info(f"  LR: {current_lr:.6f}")
         self.logger.info("─" * 66)
     
     def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
+        """Save model to specified path with extra info incl. optimizer and best val acc"""
         model_state = model._orig_mod.state_dict() if hasattr(model, '_orig_mod') else model.state_dict()
         
         torch.save({
@@ -221,26 +343,49 @@ class CCTTrainer:
             "optim_state": optimizer.state_dict(),
             "best_val_acc": best_val_acc,
         }, path)    
-        self.logger.info(f"💾 Saved best model (val_acc: {best_val_acc:.2f}%) to {path}")
+        self.logger.info(f"Saved best model (val_acc: {best_val_acc:.2f}%) to {path}")
 
     def train(self):
-        self.logger.info(f"Beginning CCT training for {self.num_epochs} epochs.")
+        """Main training loop"""
+        self.logger.info("==== Trainer Configuration: ====")
+        for k, v in self._get_config().items():
+            self.logger.info(f" {k}: {v}")
+        self.logger.info("================================")
+        
+        self.logger.info(f"Beginning training for {self.model_name} for {self.num_epochs} epochs.")
         self.logger.info("-" * 60)
         
+        # Store best accuracy during run to determine when to save model.
         best_val_acc = -1.0
-        early_stopping = EarlyStopping(patience=5, min_delta=0.001, mode='max')
+        
+        # Initialize Early Stopping
+        early_stopping = EarlyStopping(patience=self.early_stopping_patience, min_delta=0.001, mode='max')
         
         for epoch in range(self.num_epochs):
             train_loss, train_acc = self.train_one_epoch(epoch)
-            val_loss, val_acc = self.validate(epoch)
+            val_loss, val_acc, val_f1_macro = self.validate(epoch)
             
             current_lr = self.scheduler.get_last_lr()[0] if self.use_scheduler else self.optimizer.param_groups[0]["lr"]
-            self._print_epoch_summary(epoch, train_loss, train_acc, val_loss, val_acc, current_lr)
+            self._print_epoch_summary(epoch, train_loss, train_acc, val_loss, val_acc, val_f1_macro, current_lr)
             
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                self.save_model(self.filepath, self.model, self.optimizer, epoch, best_val_acc)
+                self.save_model(self.checkpoints_path / self.best_model_filename, self.model, self.optimizer, epoch, best_val_acc)
             
+            self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, best_val_acc)
+            
+            # Log metrics in run
+            self._log_metrics({
+                "epoch": epoch + 1,
+                "train_loss": train_loss,
+                "train_acc": train_acc,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+                "lr": self.optimizer.param_groups[0]["lr"],
+                "f1_macro": val_f1_macro
+            })
+            
+            # Check Early Stopping
             if early_stopping.check(val_acc):
                 self.logger.info(f"\n{'='*60}")
                 self.logger.info(f"Early stopping triggered after {epoch+1} epochs.")

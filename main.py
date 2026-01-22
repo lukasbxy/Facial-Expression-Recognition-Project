@@ -1,6 +1,7 @@
 import argparse
-from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34
+from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34, CCT
 from training.ResNetTrainer import ResNetTrainer
+from training.CCTTrainer import CCTTrainer
 
 
 def get_model(model_name: str):
@@ -10,6 +11,7 @@ def get_model(model_name: str):
         'resnet18_se': ResNet18_SE,
         'resnet18_se_variant': ResNet18_SE_Variant,
         'resnet34': ResNet34,
+        'cct': CCT,
     }
     
     if model_name.lower() not in models:
@@ -47,7 +49,7 @@ Examples:
         '--model',
         type=str,
         default='resnet18_se_variant',
-        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34'],
+        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct'],
         help='Select the model (default: resnet18_se_variant)'
     )
     
@@ -61,15 +63,15 @@ Examples:
     parser.add_argument(
         '--lr', '--learning-rate',
         type=float,
-        default=0.001,
-        help='Learning rate (default: 0.001)'
+        default=None,
+        help='Learning rate (default: 0.001 for ResNet, 0.0005 for CCT)'
     )
     
     parser.add_argument(
         '--weight-decay',
         type=float,
-        default=0.0001,
-        help='Weight decay (default: 0.0001)'
+        default=None,
+        help='Weight decay (default: 0.0001 for ResNet, 0.05 for CCT)'
     )
     
     parser.add_argument(
@@ -154,21 +156,40 @@ Examples:
     print(f"Loading model: {args.model}")
     model = get_model(args.model)
     
-    trainer = ResNetTrainer(
-        model,
-        num_epochs=args.epochs,
-        learning_rate=args.lr,
-        weight_decay=args.weight_decay,
-        train_datasets=args.train_datasets,
-        val_datasets=args.val_datasets,
-        cm_every=args.cm_every,
-        use_adamw=args.use_adamw,
-        use_scheduler=args.use_scheduler,
-        use_label_smoothing=args.use_label_smoothing,
-        use_class_weights=args.use_class_weights,
-        class_limit=args.class_limit,
-        early_stopping_patience=args.patience   
-    )
+    # Select trainer based on model type
+    if args.model.lower() == 'cct':
+        # CCT: Defaults sind 0.0005 (lr) und 0.05 (weight_decay)
+        trainer = CCTTrainer(
+            model,
+            num_epochs=args.epochs,
+            learning_rate=args.lr if args.lr is not None else 0.0005,
+            weight_decay=args.weight_decay if args.weight_decay is not None else 0.05,
+            train_datasets=args.train_datasets,
+            val_datasets=args.val_datasets,
+            cm_every=args.cm_every,
+            use_scheduler=args.use_scheduler,
+            use_label_smoothing=args.use_label_smoothing,
+            use_class_weights=args.use_class_weights,
+            class_limit=args.class_limit,
+            early_stopping_patience=args.patience
+        )
+    else:
+        # ResNet: Defaults sind 0.001 (lr) und 0.0001 (weight_decay)
+        trainer = ResNetTrainer(
+            model,
+            num_epochs=args.epochs,
+            learning_rate=args.lr if args.lr is not None else 0.001,
+            weight_decay=args.weight_decay if args.weight_decay is not None else 0.0001,
+            train_datasets=args.train_datasets,
+            val_datasets=args.val_datasets,
+            cm_every=args.cm_every,
+            use_adamw=args.use_adamw,
+            use_scheduler=args.use_scheduler,
+            use_label_smoothing=args.use_label_smoothing,
+            use_class_weights=args.use_class_weights,
+            class_limit=args.class_limit,
+            early_stopping_patience=args.patience
+        )
     
     trainer.train()
 

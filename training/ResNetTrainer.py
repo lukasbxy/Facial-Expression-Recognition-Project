@@ -333,7 +333,7 @@ class ResNetTrainer:
         self.logger.info("─" * 66)
         self.logger.info(f"Epoch {epoch+1}/{self.num_epochs} Summary:")
         self.logger.info(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_accuracy:.2f}%")
-        self.logger.info(f"  Val Loss:   {val_loss:.4f} | Val Acc:   {val_accuracy:.2f}%")
+        self.logger.info(f"  Val Loss:   {val_loss:.4f} | Val Acc:   {val_accuracy:.2f}% | F1: {val_f1_macro:.4f}")
         self.logger.info(f"  LR: {current_lr:.6f}")
         self.logger.info("─" * 66)
     
