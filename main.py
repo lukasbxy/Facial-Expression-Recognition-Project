@@ -23,9 +23,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Legacy examples (still work)
   python main.py --model resnet18_se_variant --epochs 50 --lr 0.001
-  python main.py --model resnet18 --batch-size 64 --use-adamw
+  python main.py --model resnet18 --use-adamw
   python main.py --model resnet18_se --epochs 100 --use-scheduler --use-label-smoothing
   python main.py --model resnet18 --use-class-weights --use-label-smoothing
   
@@ -73,13 +72,6 @@ Examples:
     )
     
     parser.add_argument(
-        '--batch-size',
-        type=int,
-        default=32,
-        help='Batch size (default: 32)'
-    )
-    
-    parser.add_argument(
         '--cm-every',
         type=int,
         default=1,
@@ -108,14 +100,6 @@ Examples:
         '--use-class-weights',
         action='store_true',
         help='Use class weights in CrossEntropyLoss to handle class imbalance'
-    )
-    
-    parser.add_argument(
-        '--dataset',
-        type=str,
-        default='full',
-        choices=['full', 'sample'],
-        help='Select the dataset (default: full) - Legacy option'
     )
     
     parser.add_argument(
@@ -154,11 +138,15 @@ Examples:
     if (args.train_datasets is None) != (args.val_datasets is None):
         parser.error("Both --train-datasets and --val-datasets must be specified together or not at all.")
     
-    # Handle 'all' shortcut
+    # Handle 'all' shortcut and default to all datasets if not specified
     all_datasets = ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
-    if args.train_datasets and 'all' in args.train_datasets:
+    if args.train_datasets is None:
         args.train_datasets = all_datasets
-    if args.val_datasets and 'all' in args.val_datasets:
+    elif 'all' in args.train_datasets:
+        args.train_datasets = all_datasets
+    if args.val_datasets is None:
+        args.val_datasets = all_datasets
+    elif 'all' in args.val_datasets:
         args.val_datasets = all_datasets
     
     # Load model
@@ -170,7 +158,6 @@ Examples:
         num_epochs=args.epochs,
         learning_rate=args.lr,
         weight_decay=args.weight_decay,
-        dataset=args.dataset,
         train_datasets=args.train_datasets,
         val_datasets=args.val_datasets,
         cm_every=args.cm_every,

@@ -15,7 +15,8 @@ Die Validierungsdaten werden NICHT augmentiert für faire Evaluation.
 
 Verwendung:
     from training.load_data import get_dataloaders
-    train_loader, val_loader = get_dataloaders(dataset='sample')
+    train_loader, val_loader, class_names = get_dataloaders()
+    train_loader, val_loader, class_names = get_dataloaders(train_datasets=['affectnet'], val_datasets=['raf_db'])
     
 Konfiguration:
     Alle Augmentation-Parameter sind in config.yaml konfigurierbar.
@@ -66,12 +67,11 @@ def _limit_dataset_classes(dataset, max_samples_per_class):
     return Subset(dataset, selected_indices)
 
 
-def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', class_limit=None):
+def get_dataloaders(train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', class_limit=None):
     """
     Erstellt Training- und Validation-DataLoader basierend auf der Konfiguration.
     
     Args:
-        dataset: Legacy parameter für 'sample' oder 'full' (alle 5 Datasets)
         train_datasets: Liste von Dataset-Namen für Training (z.B. ['affectnet', 'fer2013'])
         val_datasets: Liste von Dataset-Namen für Validation (z.B. ['raf_db'])
         batch_size: Batch size für DataLoader
@@ -80,7 +80,9 @@ def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, ba
         class_limit: Maximale Anzahl an Bildern pro Klasse (None für kein Limit)
     
     Returns:
-        train_loader, val_loader: PyTorch DataLoader
+        train_loader: PyTorch DataLoader for training data
+        val_loader: PyTorch DataLoader for validation data
+        class_names: List of class names (e.g., ['0_Happiness', '1_Surprise', ...])
     """
     
     with open(config_path, 'r') as f:
@@ -88,19 +90,11 @@ def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, ba
     
     img_size = config['image']['size']
     
-    # Dataset-Auswahl logik
-    if train_datasets is None and val_datasets is None:
-        # Legacy mode: 'sample' oder 'full'
-        if dataset == 'full':
-            # Alle 5 Datasets für Training und Validation
-            train_datasets = ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
-            val_datasets = ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
-        elif dataset == 'sample':
-            # Sample Dataset (für schnelle Tests)
-            train_datasets = ['sample']
-            val_datasets = ['sample']
-        else:
-            raise ValueError(f"Unknown dataset: {dataset}")
+    # Use default datasets if None provided
+    if train_datasets is None:
+        train_datasets = list(config['dataset'].keys())
+    if val_datasets is None:
+        val_datasets = list(config['dataset'].keys())
     
     # Pfade sammeln
     train_paths = []
@@ -229,4 +223,14 @@ def get_dataloaders(dataset='sample', train_datasets=None, val_datasets=None, ba
         pin_memory=True
     )
     
-    return train_loader, val_loader
+    # Get class names from first dataset (all datasets should have same classes)
+    first_dataset = train_datasets_list[0]
+    if hasattr(first_dataset, 'classes'):
+        class_names = first_dataset.classes
+    elif hasattr(first_dataset, 'dataset') and hasattr(first_dataset.dataset, 'classes'):
+        # Subset case
+        class_names = first_dataset.dataset.classes
+    else:
+        class_names = None
+    
+    return train_loader, val_loader, class_names

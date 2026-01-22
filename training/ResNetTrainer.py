@@ -21,7 +21,6 @@ class ResNetTrainer:
                  num_epochs: int = 32, 
                  learning_rate: float = 0.001, 
                  weight_decay: float = 0.0001,
-                 dataset: str = 'full',
                  train_datasets=None,
                  val_datasets=None,
                  cm_every: int = 1,
@@ -31,12 +30,11 @@ class ResNetTrainer:
                  use_class_weights: bool = False,
                  class_limit: int = None,
                  best_model_filename: str = "best.pt",
-                 last_model_filename: str = "last.pt", # Inside checkpoints folder in run dir
+                 last_model_filename: str = "last.pt",
                  early_stopping_patience: int = 5):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
-        self.dataset = dataset
         self.train_datasets = train_datasets
         self.val_datasets = val_datasets
         self.cm_every = cm_every
@@ -77,8 +75,7 @@ class ResNetTrainer:
         self.scaler = torch.amp.GradScaler(device = self.device.type, enabled = self.use_amp)
         
         # Dataloaders
-        self.train_loader, self.val_loader = get_dataloaders(
-            dataset=self.dataset, 
+        self.train_loader, self.val_loader, self.class_names = get_dataloaders(
             train_datasets=self.train_datasets, 
             val_datasets=self.val_datasets,
             class_limit=self.class_limit
@@ -87,7 +84,28 @@ class ResNetTrainer:
         # Compute class weights if needed
         if use_class_weights:
             # Automatically compute class weights from training dataset
-            targets = np.array(self.train_loader.dataset.targets)
+            # Gather targets from all sub-datasets (handles ConcatDataset and Subset)
+            all_targets = []
+            train_dataset = self.train_loader.dataset
+            if hasattr(train_dataset, 'datasets'):
+                # ConcatDataset case
+                for ds in train_dataset.datasets:
+                    if hasattr(ds, 'targets'):
+                        all_targets.extend(ds.targets)
+                    elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
+                        # Subset case
+                        indices = ds.indices
+                        original_targets = ds.dataset.targets
+                        all_targets.extend([original_targets[i] for i in indices])
+            elif hasattr(train_dataset, 'targets'):
+                all_targets = list(train_dataset.targets)
+            elif hasattr(train_dataset, 'dataset') and hasattr(train_dataset.dataset, 'targets'):
+                # Single Subset case
+                indices = train_dataset.indices
+                original_targets = train_dataset.dataset.targets
+                all_targets = [original_targets[i] for i in indices]
+            
+            targets = np.array(all_targets)
             class_counts = np.bincount(targets)
             # Compute inverse frequency weights and normalize
             class_weights = 1.0 / class_counts
@@ -134,7 +152,7 @@ class ResNetTrainer:
                 self.criterion = nn.CrossEntropyLoss()
                 
         # Setup F1 Score
-        self.num_classes = len(self.val_loader.dataset.classes)
+        self.num_classes = len(self.class_names)
         self.val_f1_macro = MulticlassF1Score(num_classes=self.num_classes, average="macro").to(self.device)
         
         self.logger.info("Trainer initialized.")
@@ -203,7 +221,6 @@ class ResNetTrainer:
             "num_epochs": self.num_epochs,
             "learning_rate": self.learning_rate,
             "weight_decay": self.weight_decay,
-            "dataset": self.dataset,
             "train_datasets": self.train_datasets,
             "val_datasets": self.val_datasets,
             "cm_every": self.cm_every,
@@ -236,7 +253,7 @@ class ResNetTrainer:
             
             self.optimizer.zero_grad(set_to_none=True)
             
-            with torch.autocast(device_type="cuda", enabled=self.use_amp):
+            with torch.autocast(device_type=self.device.type, enabled=self.use_amp):
                 outputs = self.model(images)
                 loss = self.criterion(outputs, labels)
                 
@@ -297,7 +314,7 @@ class ResNetTrainer:
                 # Save confusion matrics
                 cm_path = create_cm(labels=labels_np,
                                  preds=preds_np,
-                                 class_names = self.val_loader.dataset.classes,
+                                 class_names = self.class_names,
                                  epoch = epoch,
                                  model_name = self.model_name,
                                  timestamp = self.timestamp,
