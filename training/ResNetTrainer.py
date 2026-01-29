@@ -348,7 +348,7 @@ class ResNetTrainer:
             },
             path,
         )    
-        self.logger.info(f"Saved best model (val_acc: {best_val_acc:.2f}%) to {path}")
+        self.logger.info(f"Saved model (val_acc: {best_val_acc:.2f}%) to {path}")
         
 
     def train(self):
@@ -378,7 +378,7 @@ class ResNetTrainer:
                 best_val_acc = val_accuracy
                 self.save_model(self.checkpoints_path / self.best_model_filename, self.model, self.optimizer, epoch, best_val_acc)
             
-            self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, best_val_acc)
+            self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, val_accuracy)
             
             # Log metrics in run
             self._log_metrics({
