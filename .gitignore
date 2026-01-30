@@ -44,3 +44,6 @@ runs/*/
 old/*
 training/test.py
 training/test2.py
+# Ignore old legacy folders
+models/*/checkpoints
+model_metrics
