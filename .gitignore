@@ -1,3 +1,7 @@
+dataset
+__MACOSX/*
+*.sbatch
+
 # Ignore all images in datasets, but keep folder structure
 dataset/**/training_set/*/*.jpg
 dataset/**/training_set/*/*.png
@@ -36,3 +40,7 @@ logs/
 
 # Ignore runs
 runs/*/
+
+old/*
+training/test.py
+training/test2.py

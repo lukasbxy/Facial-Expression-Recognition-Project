@@ -234,3 +234,153 @@ def get_dataloaders(train_datasets=None, val_datasets=None, batch_size=32, num_w
         class_names = None
     
     return train_loader, val_loader, class_names
+
+def get_datasets(train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', class_limit=None):
+    """
+    Erstellt Training- und Validation-DataLoader basierend auf der Konfiguration.
+    
+    Args:
+        train_datasets: Liste von Dataset-Namen für Training (z.B. ['affectnet', 'fer2013'])
+        val_datasets: Liste von Dataset-Namen für Validation (z.B. ['raf_db'])
+        batch_size: Batch size für DataLoader
+        num_workers: Anzahl der Worker für DataLoader
+        config_path: Pfad zur config.yaml
+        class_limit: Maximale Anzahl an Bildern pro Klasse (None für kein Limit)
+    
+    Returns:
+        train_loader: PyTorch DataLoader for training data
+        val_loader: PyTorch DataLoader for validation data
+        class_names: List of class names (e.g., ['0_Happiness', '1_Surprise', ...])
+    """
+    
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    img_size = config['image']['size']
+    
+    # Use default datasets if None provided
+    if train_datasets is None:
+        train_datasets = list(config['dataset'].keys())
+    if val_datasets is None:
+        val_datasets = list(config['dataset'].keys())
+    
+    # Pfade sammeln
+    train_paths = []
+    val_paths = []
+    
+    for ds_name in train_datasets:
+        if ds_name in config['dataset']:
+            train_paths.append(config['dataset'][ds_name]['train'])
+        else:
+            raise ValueError(f"Dataset '{ds_name}' nicht in config.yaml gefunden")
+    
+    for ds_name in val_datasets:
+        if ds_name in config['dataset']:
+            val_paths.append(config['dataset'][ds_name]['val'])
+        else:
+            raise ValueError(f"Dataset '{ds_name}' nicht in config.yaml gefunden")
+    
+    # Prüfen ob Pfade existieren
+    for path in train_paths + val_paths:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Dataset-Pfad nicht gefunden: {path}")
+    
+    # ===================================================================
+    # DATA AUGMENTATION - Training Transforms
+    # ===================================================================
+    
+    aug_config = config.get('augmentation', {})
+    
+    train_transform = transforms.Compose([
+        transforms.RandomResizedCrop(
+            size=img_size,
+            scale=(aug_config.get('crop_scale_min', 0.9), 
+                   aug_config.get('crop_scale_max', 1.0))
+        ),
+        transforms.RandomRotation(
+            degrees=aug_config.get('rotation_degrees', 10)
+        ),
+        transforms.RandomHorizontalFlip(
+            p=aug_config.get('horizontal_flip_prob', 0.5)
+        ),
+        transforms.ColorJitter(
+            brightness=aug_config.get('brightness', 0.2),
+            contrast=aug_config.get('contrast', 0.2),
+            saturation=aug_config.get('saturation', 0.1)
+        ),
+        transforms.ToTensor(),
+        transforms.RandomErasing(
+            p=aug_config.get('erase_prob', 0.3),
+            scale=(aug_config.get('erase_scale_min', 0.02), 
+                   aug_config.get('erase_scale_max', 0.10)),
+            ratio=(0.3, 3.3)
+        ),
+    ])
+    
+    # ===================================================================
+    # VALIDATION Transforms - KEINE Augmentation!
+    # ===================================================================
+    
+    val_transform = transforms.Compose([
+        transforms.Resize((img_size, img_size)),
+        transforms.ToTensor(),
+    ])
+    
+    # Datasets erstellen und kombinieren
+    train_datasets_list = []
+    for path in train_paths:
+        dataset = datasets.ImageFolder(root=path, transform=train_transform)
+        
+        # Class Limiting für Training
+        if class_limit is not None:
+            dataset = _limit_dataset_classes(dataset, class_limit)
+            print(f"Limited training dataset to {class_limit} samples per class")
+        
+        train_datasets_list.append(dataset)
+    
+    val_datasets_list = []
+    for path in val_paths:
+        val_datasets_list.append(datasets.ImageFolder(root=path, transform=val_transform))
+    
+    # Datasets kombinieren mit ConcatDataset
+    from torch.utils.data import ConcatDataset
+    train_dataset = ConcatDataset(train_datasets_list) if len(train_datasets_list) > 1 else train_datasets_list[0]
+    val_dataset = ConcatDataset(val_datasets_list) if len(val_datasets_list) > 1 else val_datasets_list[0]
+    
+    # Sampler erstellen (nur für Training) - immer verwenden
+    # Targets von allen Sub-Datasets sammeln (auch mit Subset)
+    all_targets = []
+    for ds in train_datasets_list:
+        if hasattr(ds, 'targets'):
+            all_targets.extend(ds.targets)
+        elif hasattr(ds, 'dataset') and hasattr(ds.dataset, 'targets'):
+            # Subset Fall: Original targets aus dem dataset holen
+            indices = ds.indices
+            original_targets = ds.dataset.targets
+            all_targets.extend([original_targets[i] for i in indices])
+    targets = np.array(all_targets)
+    
+    # Immer WeightedRandomSampler verwenden
+    if len(targets) > 0:
+        class_counts = np.bincount(targets)
+        class_weights = 1.0 / torch.sqrt(class_counts)
+        sample_weights = class_weights[targets]
+        train_sampler = WeightedRandomSampler(
+            weights = torch.as_tensor(sample_weights, dtype = torch.double),
+            num_samples = len(targets),
+            replacement = True
+        )
+    else:
+        train_sampler = None
+    
+    # Get class names from first dataset (all datasets should have same classes)
+    first_dataset = train_datasets_list[0]
+    if hasattr(first_dataset, 'classes'):
+        class_names = first_dataset.classes
+    elif hasattr(first_dataset, 'dataset') and hasattr(first_dataset.dataset, 'classes'):
+        # Subset case
+        class_names = first_dataset.dataset.classes
+    else:
+        class_names = None
+    
+    return train_dataset, val_dataset, class_names

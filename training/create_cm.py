@@ -36,6 +36,8 @@ def create_cm(labels,
         values_format=".2f",
         xticks_rotation=45,
         colorbar=True,
+        vmin=0.0,
+        vmax=1.0
     )
     
     ax.set_title(f"{model_name} Confusion Matrix (Epoch {epoch + 1})")
