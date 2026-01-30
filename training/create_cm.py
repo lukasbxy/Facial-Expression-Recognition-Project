@@ -35,10 +35,11 @@ def create_cm(labels,
         cmap="Blues",
         values_format=".2f",
         xticks_rotation=45,
-        colorbar=True,
-        vmin=0.0,
-        vmax=1.0
+        colorbar=True
     )
+    
+    im = ax.images[0]
+    im.set_clim(0.0, 1.0)
     
     ax.set_title(f"{model_name} Confusion Matrix (Epoch {epoch + 1})")
     fig.tight_layout()
