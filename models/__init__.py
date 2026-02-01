@@ -4,5 +4,6 @@ from .ResNet34 import ResNet34
 from .ResNet18_Variant import ResNet18_Variant
 from .CCT import CCT
 from .ResNet18_SE_Variant import ResNet18_SE_Variant
+from .ViT_Simple.ViT_Simple import ViT_Simple
 
-__all__ = ['ResNet18', 'ResNet18_SE', 'ResNet18_SE_Variant', 'ResNet34', 'CCT', 'ResNet18_Variant']
+__all__ = ['ResNet18', 'ResNet18_SE', 'ResNet18_SE_Variant', 'ResNet34', 'CCT', 'ResNet18_Variant', 'ViT_Simple']

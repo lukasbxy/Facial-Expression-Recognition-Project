@@ -19,7 +19,7 @@ class CCTTrainer:
     def __init__(self, 
                  model,
                  num_epochs: int = 30,
-                 learning_rate: float = 0.0005,
+                 learning_rate: float = 1e-4,
                  weight_decay: float = 0.05,
                  train_datasets=None,
                  val_datasets=None,

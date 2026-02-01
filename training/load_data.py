@@ -195,7 +195,7 @@ def get_dataloaders(train_datasets=None, val_datasets=None, batch_size=32, num_w
     # Immer WeightedRandomSampler verwenden
     if len(targets) > 0:
         class_counts = np.bincount(targets)
-        class_weights = 1.0 / class_counts
+        class_weights = 1.0 / np.sqrt(class_counts)
         sample_weights = class_weights[targets]
         train_sampler = WeightedRandomSampler(
             weights = torch.as_tensor(sample_weights, dtype = torch.double),
@@ -363,7 +363,8 @@ def get_datasets(train_datasets=None, val_datasets=None, batch_size=32, num_work
     # Immer WeightedRandomSampler verwenden
     if len(targets) > 0:
         class_counts = np.bincount(targets)
-        class_weights = 1.0 / torch.sqrt(class_counts)
+        # class_weights = 1.0 / torch.sqrt(class_counts)
+        class_weights = class_counts / class_counts
         sample_weights = class_weights[targets]
         train_sampler = WeightedRandomSampler(
             weights = torch.as_tensor(sample_weights, dtype = torch.double),

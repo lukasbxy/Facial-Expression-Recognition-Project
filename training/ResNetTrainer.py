@@ -31,7 +31,8 @@ class ResNetTrainer:
                  class_limit: int = None,
                  best_model_filename: str = "best.pt",
                  last_model_filename: str = "last.pt",
-                 early_stopping_patience: int = 5):
+                 early_stopping_patience: int = 5,
+                 use_warmup: bool = False):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -44,6 +45,7 @@ class ResNetTrainer:
         self.best_model_filename = best_model_filename
         self.last_model_filename = last_model_filename
         self.early_stopping_patience = early_stopping_patience
+        self.use_warmup = use_warmup
         
         # Automatically construct filepath based on model class name
         # Store model_name in self for use in logging and filenames
@@ -129,6 +131,16 @@ class ResNetTrainer:
                 weight_decay = self.weight_decay)
         
         
+        self.scheduler = None
+        self.warmup_scheduler = None
+        self.warmup_epochs = 5
+        if self.use_warmup:
+            def warmup_lambda(epoch):
+                if epoch < self.warmup_epochs:
+                    return float(epoch + 1) / float(self.warmup_epochs)
+                return 1.0
+            self.warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=warmup_lambda)
+
         if self.use_scheduler:
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 self.optimizer,
@@ -138,7 +150,7 @@ class ResNetTrainer:
                 pct_start=0.1,         
                 div_factor=10.0,        
                 final_div_factor=100.0  
-        )
+            )
             
         if use_label_smoothing:
             if use_class_weights and class_weights is not None:
@@ -370,16 +382,20 @@ class ResNetTrainer:
         for epoch in range(self.num_epochs):
             train_loss, train_accuracy = self.train_one_epoch(epoch)
             val_loss, val_accuracy, val_f1_macro = self.validate(epoch)
-            
+
+            # Step warmup scheduler if used and not finished
+            if self.use_warmup and self.warmup_scheduler is not None and epoch < self.warmup_epochs:
+                self.warmup_scheduler.step()
+
             current_lr = self.optimizer.param_groups[0]["lr"]
             self._print_epoch_summary(epoch, train_loss, train_accuracy, val_loss, val_accuracy, val_f1_macro, current_lr)
-            
+
             if val_accuracy > best_val_acc:
                 best_val_acc = val_accuracy
                 self.save_model(self.checkpoints_path / self.best_model_filename, self.model, self.optimizer, epoch, best_val_acc)
-            
+
             self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, val_accuracy)
-            
+
             # Log metrics in run
             self._log_metrics({
                 "epoch": epoch + 1,
@@ -390,7 +406,7 @@ class ResNetTrainer:
                 "lr": self.optimizer.param_groups[0]["lr"],
                 "f1_macro": val_f1_macro
             })
-            
+
             # Check Early Stopping
             if early_stopping.check(val_accuracy):
                 self.logger.info(f"\n{'='*60}")
@@ -399,6 +415,6 @@ class ResNetTrainer:
                 self.logger.info(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
                 self.logger.info(f"{'='*60}")
                 break
-                
+
         self.logger.info("\n" + "=" * 60)
         self.logger.info("Training complete.")

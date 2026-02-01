@@ -6,13 +6,15 @@ from training.CCTTrainer import CCTTrainer
 
 def get_model(model_name: str):
     """Load the desired model based on the name."""
+    from models import ViT_Simple
     models = {
         'resnet18': ResNet18,
         'resnet18_se': ResNet18_SE,
         'resnet18_se_variant': ResNet18_SE_Variant,
         'resnet34': ResNet34,
         'cct': CCT,
-        'resnet18_variant': ResNet18_Variant
+        'resnet18_variant': ResNet18_Variant,
+        'vit_simple': ViT_Simple
     }
     
     if model_name.lower() not in models:
@@ -46,12 +48,19 @@ Examples:
         """
     )
     
+    
     parser.add_argument(
         '--model',
         type=str,
         default='resnet18_se_variant',
-        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct', 'resnet18_variant'],
-        help='Select the model (default: resnet18_se_variant)'
+        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct', 'resnet18_variant', 'vit_simple'],
+        help='Select the model (default: resnet18_se_variant, options: resnet18, resnet18_se, resnet18_se_variant, resnet34, cct, resnet18_variant, vit_simple)'
+    )
+    
+    parser.add_argument(
+        '--use-warmup',
+        action='store_true',
+        help='Enable learning rate warmup for the first few epochs (default: off)'
     )
     
     parser.add_argument(
@@ -189,7 +198,8 @@ Examples:
             use_label_smoothing=args.use_label_smoothing,
             use_class_weights=args.use_class_weights,
             class_limit=args.class_limit,
-            early_stopping_patience=args.patience
+            early_stopping_patience=args.patience,
+            use_warmup=args.use_warmup
         )
     
     trainer.train()
