@@ -1,3 +1,12 @@
+# EMOTION MAPPING
+emotions:
+  0: happiness
+  1: surprise
+  2: sadness
+  3: anger
+  4: disgust
+  5: fear
+
 # DATASET CONFIGURATION
 # Pfade zu den Datasets
 dataset:

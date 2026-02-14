@@ -95,6 +95,6 @@ dataset/
 | 5_Fear        | 21,277        | 7.9%      |
 | **Total**     | **270,311**   | **100%**  |
 
-**Note:** Due to the dominance of the Happiness class (52.2%), a class limit of 50,000 images per emotion is applied during training to prevent bias.
+**Note:** Due to the dominance of the Happiness class (52.2%), a class limit of e.g. 50,000 images per emotion is applied during training to prevent bias.
 
 **Note:** Only `dataset_sample` images are included in the repository. The `dataset_full` folder structure is preserved with `.gitkeep` files, but images must be downloaded separately from our Google Drive
