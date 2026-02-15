@@ -43,7 +43,9 @@ class CCTTrainer:
                  class_limit: int = None,
                  best_model_filename: str = "best.pt",
                  last_model_filename: str = "last.pt",
-                 early_stopping_patience: int = 5):
+                 early_stopping_patience: int = 5,
+                 use_weighted_sampler: bool = True,
+                 weight_power: float = 1.0):
         
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
@@ -57,6 +59,8 @@ class CCTTrainer:
         self.best_model_filename = best_model_filename
         self.last_model_filename = last_model_filename
         self.early_stopping_patience = early_stopping_patience
+        self.use_weighted_sampler = use_weighted_sampler
+        self.weight_power = weight_power
         
         # Store model name and generate timestamp
         self.model_name = model.__class__.__name__
@@ -99,7 +103,9 @@ class CCTTrainer:
         self.train_loader, self.val_loader, self.class_names = get_dataloaders(
             train_datasets=self.train_datasets,
             val_datasets=self.val_datasets,
-            class_limit=self.class_limit
+            class_limit=self.class_limit,
+            use_weighted_sampler=self.use_weighted_sampler,
+            weight_power=self.weight_power
         )
         
         # Compute class weights if needed
@@ -247,6 +253,8 @@ class CCTTrainer:
             "use_scheduler": self.use_scheduler,
             "use_class_weights": self.use_class_weights,
             "class_limit": self.class_limit,
+            "use_weighted_sampler": self.use_weighted_sampler,
+            "weight_power": self.weight_power,
             "best_model_filename": self.best_model_filename,
             "last_model_filename": self.last_model_filename,
             "device": str(self.device),

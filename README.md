@@ -123,7 +123,8 @@ dataset/
 - `--train-datasets` and `--val-datasets` can be combined in any way independently.
   - Use both flags together or omit both to use all datasets
 - Use `--class-limit N` to cap samples per emotion across datasets.
-- Training always uses weighted random sampling (`WeightedRandomSampler`).
+- By default, training uses weighted random sampling (`WeightedRandomSampler`).
+- Disable it with `--disable-weighted-random-sampler` (or `--disable-wrs`).
 
 ### Key Training Flags
 | Option | Default | Description |
@@ -137,8 +138,8 @@ dataset/
 | `--use-label-smoothing` | Off | Enable label smoothing |
 | `--use-class-weights` | Off | Apply class weights to the loss function (`CrossEntropyLoss`) |
 | `--use-adamw` | Off | ResNet only (`cct` already uses AdamW) |
-| `--disable-wrs` | Off | Disable Weighted Random Sampling for the training dataset |
-| `--weight-power` | `1.0` | Controls the aggressiveness of the weighted random sampler for the training dataset. The weight is computed as $w_c = \left(\frac{1}{\mathrm{count}_c}\right)^p$. Only has an effect if the weighted random sampler is NOT disabled. |
+| `--disable-weighted-random-sampler`, `--disable-wrs` | Off | Disable Weighted Random Sampling for the training dataset (ResNet and CCT) |
+| `--weight-power`, `--wp` | `1.0` | Controls the aggressiveness of the weighted random sampler for the training dataset. The weight is computed as $w_c = \left(\frac{1}{\mathrm{count}_c}\right)^p$. Only has an effect if the weighted random sampler is NOT disabled. |
 
 
 ### Example Commands
