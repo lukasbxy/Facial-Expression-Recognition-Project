@@ -1,15 +1,11 @@
-'''
-Implementation:
-from models.attention.se_block import SEBlock 
-...
-in class BasicBlock __init__:
-self.se = SEBlock(out_channels)
+"""
+Squeeze-and-Excitation (SE) block for ResNet18_SE_Variant.
 
-in class BasicBlock forward:
-BEFORE shortcut:
-out = self.se(out)
-
-'''
+Key points:
+- Uses global average pooling to squeeze spatial information per channel.
+- Uses a two-layer MLP with reduction ratio (default: 16) and ReLU.
+- Uses a sigmoid gate to reweight channels and scale the input feature map.
+"""
 
 
 import torch 
