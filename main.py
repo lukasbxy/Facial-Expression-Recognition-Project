@@ -130,7 +130,26 @@ def main():
         help='Limit maximum number of samples per class (e.g., 50000). Helps with class imbalance.'
     )
     
+    parser.add_argument(
+        '--use-weighted-random-sampler', '--use-wrs',
+        action='store_true',
+        help='Use weighted random sampler to handle class imbalance'
+    )
+    
+    parser.add_argument(
+        '--weight-power', '--wp',
+        type=float,
+        default=1.0,
+        help='Exponent for class weights when using weighted random sampler (default: 1.0)'
+    )
+    
     args = parser.parse_args()
+    
+    # misc comments
+    print(f"[NOTE] Using Weighted Random Sampling must be set explicitly with --use-weighted-random-sample or --use-wrs. \nIt is not enabled by default, even if --use-class-weights or --weight-power is set.")
+    
+    if args.model.lower() == 'cct' and (args.use_weighted_random_sampler):
+        print(f"Weighted Random Sampler is not currently implemented for CCT. Ignoring --use-weighted-random-sampler flag. To be fixed tomorrow ...")
     
     # Validate dataset arguments
     if (args.train_datasets is None) != (args.val_datasets is None):
