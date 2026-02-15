@@ -1,3 +1,17 @@
+"""
+Trainer for Compact Convolutional Transformer (CCT) models.
+
+Key responsibilities:
+- Prepare train and validation dataloaders.
+- Configure AdamW with optional OneCycleLR warmup.
+- Enable mixed precision on CUDA for faster training.
+- Track validation accuracy and macro F1.
+- Export confusion matrices every N epochs.
+- Log metrics to CSV.
+- Save `best.pt` and `last.pt` checkpoints.
+- Apply early stopping when validation performance stalls.
+"""
+
 from pathlib import Path
 import torch
 import torch.nn as nn
@@ -15,7 +29,6 @@ from training.load_data import get_dataloaders
 from training.early_stopping import EarlyStopping
 
 class CCTTrainer:
-    
     def __init__(self, 
                  model,
                  num_epochs: int = 30,
@@ -64,7 +77,6 @@ class CCTTrainer:
             self.device = torch.device('cpu')
         self.logger.info(f"Using Device: {self.device}")
         
-        # --- CUDA-ONLY OPTIMIZATIONS ---
         # channels_last and torch.compile() only work reliably on CUDA
         self.use_cuda_optimizations = (self.device.type == "cuda")
         
@@ -121,25 +133,23 @@ class CCTTrainer:
         else:
             class_weights = None
         
-        # --- OPTIMIZER CHANGE ---
-        # Fixed logic: CCT/ViT should almost always use AdamW.
+        # CCT models generally train best with AdamW.
         self.optimizer = optim.AdamW(
             self.model.parameters(),
             lr=self.learning_rate,
             weight_decay=self.weight_decay
         )
         
-        # --- SCHEDULER & WARMUP ---
-        # OneCycleLR includes a Warmup phase (pct_start=0.3 means 30% warmup).
+        # OneCycleLR includes a warmup phase.
         if self.use_scheduler:
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
                 self.optimizer,
                 max_lr=self.learning_rate,
                 epochs=num_epochs,
                 steps_per_epoch=len(self.train_loader),
-                pct_start=0.3,          # 30% Warmup phase (Critical for CCT)
-                div_factor=25.0,        # Initial LR = max_lr / 25
-                final_div_factor=1000.0 # Final LR = initial_LR / 1000
+                pct_start=0.3,          
+                div_factor=25.0,        
+                final_div_factor=1000.0 
             )
         else:
             self.scheduler = None
@@ -162,7 +172,7 @@ class CCTTrainer:
         self.logger.info("CCT Trainer initialized.")
         
     def _setup_checkpoints_logging(self):
-        """Setup logging and file_system"""
+        """Set up logging, run directories, and checkpoints."""
         # Create runs directory if it doesn't exist
         log_dir = Path("runs")
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -205,6 +215,7 @@ class CCTTrainer:
         self.logger.info(f"Logging initialized. Run directory: {self.run_dir}")
         
     def _setup_metrics(self):
+        """Initialize CSV metrics logging."""
         self.metrics_path = self.run_dir / "metrics.csv"
         self._metrics_file = self.metrics_path.open("a", newline="")
         self._metrics_writer = None
@@ -218,9 +229,14 @@ class CCTTrainer:
             self._metrics_writer.writeheader()
         self._metrics_writer.writerow(metrics)
         self._metrics_file.flush()
+
+    def _close_metrics_file(self):
+        """Close CSV metrics file if it is open."""
+        if hasattr(self, "_metrics_file") and not self._metrics_file.closed:
+            self._metrics_file.close()
         
     def _get_config(self):
-        """Print out selected config of trainer for logging purposes!"""
+        """Return trainer config for logging."""
         return {
             "num_epochs": self.num_epochs,
             "learning_rate": self.learning_rate,
@@ -237,7 +253,7 @@ class CCTTrainer:
             "model.class": self.model_name,
             "scheduler": self.scheduler.__class__.__name__ if self.use_scheduler else None,
             "optimizer": self.optimizer.__class__.__name__,
-            "early_stopping_patience": str(self.early_stopping_patience)
+            "early_stopping_patience": self.early_stopping_patience
         }
         
     def train_one_epoch(self, epoch):
@@ -277,7 +293,7 @@ class CCTTrainer:
         return loss_total / total, 100 * correct / total
     
     def validate(self, epoch):
-        """Validate module on validation data"""
+        """Run validation and return loss, accuracy, and macro F1."""
         self.val_f1_macro.reset()
         self.model.eval()
         loss_total, correct, total = 0.0, 0, 0
@@ -325,7 +341,7 @@ class CCTTrainer:
         return loss_avg, accuracy, val_f1_macro
     
     def _print_epoch_summary(self, epoch, train_loss, train_accuracy, val_loss, val_accuracy, val_f1_macro, current_lr):
-        """Print formatted epoch summary"""
+        """Log a formatted epoch summary."""
         self.logger.info("─" * 66)
         self.logger.info(f"Epoch {epoch+1}/{self.num_epochs} Summary:")
         self.logger.info(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_accuracy:.2f}%")
@@ -334,7 +350,7 @@ class CCTTrainer:
         self.logger.info("─" * 66)
     
     def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
-        """Save model to specified path with extra info incl. optimizer and best val acc"""
+        """Save a checkpoint with model and optimizer state."""
         model_state = model._orig_mod.state_dict() if hasattr(model, '_orig_mod') else model.state_dict()
         
         torch.save({
@@ -343,10 +359,10 @@ class CCTTrainer:
             "optim_state": optimizer.state_dict(),
             "best_val_acc": best_val_acc,
         }, path)    
-        self.logger.info(f"Saved best model (val_acc: {best_val_acc:.2f}%) to {path}")
+        self.logger.info(f"Saved checkpoint (best val_acc: {best_val_acc:.2f}%) to {path}")
 
     def train(self):
-        """Main training loop"""
+        """Run the full training loop."""
         self.logger.info("==== Trainer Configuration: ====")
         for k, v in self._get_config().items():
             self.logger.info(f" {k}: {v}")
@@ -393,6 +409,7 @@ class CCTTrainer:
                 self.logger.info(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
                 self.logger.info(f"{'='*60}")
                 break
-                
+
+        self._close_metrics_file()
         self.logger.info("\n" + "=" * 60)
         self.logger.info("Training complete.")

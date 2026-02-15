@@ -1,3 +1,17 @@
+"""
+Trainer for ResNet-based models.
+
+Key responsibilities:
+- Prepare train and validation dataloaders.
+- Configure Adam or AdamW with optional OneCycleLR.
+- Enable mixed precision on CUDA for faster training.
+- Track validation accuracy and macro F1.
+- Export confusion matrices every N epochs.
+- Log metrics to CSV.
+- Save `best.pt` and `last.pt` checkpoints.
+- Apply early stopping when validation performance stalls.
+"""
+
 from pathlib import Path
 import torch
 import torch.nn as nn
@@ -45,11 +59,8 @@ class ResNetTrainer:
         self.last_model_filename = last_model_filename
         self.early_stopping_patience = early_stopping_patience
         
-        # Automatically construct filepath based on model class name
-        # Store model_name in self for use in logging and filenames
+        # Store model name and timestamp for this run.
         self.model_name = model.__class__.__name__
-        
-        # Generate timestamp for this training session
         self.timestamp = datetime.now().strftime("%d.%m.%y_%H.%M.%S")
         
         # Setup logging
@@ -68,11 +79,10 @@ class ResNetTrainer:
         self.logger.info(f"Using Device: {self.device}")
         
         # Model
-        self.model = model
-        self.model = self.model.to(self.device)
+        self.model = model.to(self.device)
         
         self.use_amp = self.device.type == "cuda"
-        self.scaler = torch.amp.GradScaler(device = self.device.type, enabled = self.use_amp)
+        self.scaler = torch.amp.GradScaler(device=self.device.type, enabled=self.use_amp)
         
         # Dataloaders
         self.train_loader, self.val_loader, self.class_names = get_dataloaders(
@@ -115,18 +125,17 @@ class ResNetTrainer:
             class_weights = None
             
         
-        # Optimizer
-        # Adam or AdamW
+        # Optimizer: Adam or AdamW.
         if use_adamw:    
             self.optimizer = optim.AdamW(
                 self.model.parameters(),
-                lr = self.learning_rate,
-                weight_decay = self.weight_decay)
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay)
         else:
             self.optimizer = optim.Adam(
                 self.model.parameters(),
-                lr = self.learning_rate,
-                weight_decay = self.weight_decay)
+                lr=self.learning_rate,
+                weight_decay=self.weight_decay)
         
         
         if self.use_scheduler:
@@ -138,7 +147,9 @@ class ResNetTrainer:
                 pct_start=0.1,         
                 div_factor=10.0,        
                 final_div_factor=100.0  
-        )
+            )
+        else:
+            self.scheduler = None
             
         if use_label_smoothing:
             if use_class_weights and class_weights is not None:
@@ -158,7 +169,7 @@ class ResNetTrainer:
         self.logger.info("Trainer initialized.")
         
     def _setup_checkpoints_logging(self):
-        """Setup logging and file_system"""
+        """Set up logging, run directories, and checkpoints."""
         # Create runs directory if it doesn't exist
         log_dir = Path("runs")
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -201,6 +212,7 @@ class ResNetTrainer:
         self.logger.info(f"Logging initialized. Run directory: {self.run_dir}")
         
     def _setup_metrics(self):
+        """Initialize CSV metrics logging."""
         self.metrics_path = self.run_dir / "metrics.csv"
         self._metrics_file = self.metrics_path.open("a", newline="")
         self._metrics_writer = None
@@ -214,9 +226,14 @@ class ResNetTrainer:
             self._metrics_writer.writeheader()
         self._metrics_writer.writerow(metrics)
         self._metrics_file.flush()
+
+    def _close_metrics_file(self):
+        """Close CSV metrics file if it is open."""
+        if hasattr(self, "_metrics_file") and not self._metrics_file.closed:
+            self._metrics_file.close()
         
     def _get_config(self):
-        """Print out selected config of trainer for logging purposes!"""
+        """Return trainer config for logging."""
         return {
             "num_epochs": self.num_epochs,
             "learning_rate": self.learning_rate,
@@ -233,13 +250,11 @@ class ResNetTrainer:
             "model.class": self.model_name,
             "scheduler": self.scheduler.__class__.__name__ if self.use_scheduler else None,
             "optimizer": self.optimizer.__class__.__name__,
-            "early_stopping_patience": str(self.early_stopping_patience)
+            "early_stopping_patience": self.early_stopping_patience
         }
         
     def train_one_epoch(self, epoch):
-        """
-        Train model for one epoch.
-        """
+        """Run one training epoch."""
         
         self.model.train()
         
@@ -279,7 +294,7 @@ class ResNetTrainer:
     
     
     def validate(self, epoch):
-        """Validate module on validation data"""
+        """Run validation and return loss, accuracy, and macro F1."""
         self.val_f1_macro.reset()
         self.model.eval()
         loss_total, correct, total = 0.0, 0, 0
@@ -311,7 +326,7 @@ class ResNetTrainer:
                 labels_np = torch.cat(all_labels).numpy()
                 preds_np  = torch.cat(all_preds).numpy()
                 
-                # Save confusion matrics
+                # Save confusion matrix.
                 cm_path = create_cm(labels=labels_np,
                                  preds=preds_np,
                                  class_names = self.class_names,
@@ -329,7 +344,7 @@ class ResNetTrainer:
     
     
     def _print_epoch_summary(self, epoch, train_loss, train_accuracy, val_loss, val_accuracy, val_f1_macro, current_lr):
-        """Print formatted epoch summary"""
+        """Log a formatted epoch summary."""
         self.logger.info("─" * 66)
         self.logger.info(f"Epoch {epoch+1}/{self.num_epochs} Summary:")
         self.logger.info(f"  Train Loss: {train_loss:.4f} | Train Acc: {train_accuracy:.2f}%")
@@ -338,7 +353,7 @@ class ResNetTrainer:
         self.logger.info("─" * 66)
     
     def save_model(self, path: Path, model, optimizer, epoch: int, best_val_acc: float):
-        """Save model to specified path with extra info incl. optimizer and best val acc"""
+        """Save a checkpoint with model and optimizer state."""
         torch.save(
             {
                 "epoch": epoch,
@@ -348,11 +363,11 @@ class ResNetTrainer:
             },
             path,
         )    
-        self.logger.info(f"Saved model (val_acc: {best_val_acc:.2f}%) to {path}")
+        self.logger.info(f"Saved checkpoint (val_acc: {best_val_acc:.2f}%) to {path}")
         
 
     def train(self):
-        """Main training loop"""
+        """Run the full training loop."""
         self.logger.info("==== Trainer Configuration: ====")
         for k, v in self._get_config().items():
             self.logger.info(f" {k}: {v}")
@@ -399,6 +414,7 @@ class ResNetTrainer:
                 self.logger.info(f"Best validation accuracy: {early_stopping.best_value:.2f}%")
                 self.logger.info(f"{'='*60}")
                 break
-                
+
+        self._close_metrics_file()
         self.logger.info("\n" + "=" * 60)
         self.logger.info("Training complete.")

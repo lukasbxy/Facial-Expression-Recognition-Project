@@ -1,3 +1,7 @@
+"""
+Script to create and save confusion matrix images during training.
+"""
+
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from pathlib import Path
 import matplotlib.pyplot as plt

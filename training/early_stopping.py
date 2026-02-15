@@ -2,17 +2,16 @@
 Early Stopping implementation for training loop.
 
 Monitors a metric (validation accuracy) and stops training when it stops improving.
+
+Arguments:
+    patience (int): Number of epochs to wait for improvement before stopping. Default: 5
+    min_delta (float): Minimum change to qualify as improvement. Default: 0.001
+    mode (str): 'max' for metrics where higher is better (accuracy), 'min' for metrics where lower is better (loss)
 """
+    
+
 
 class EarlyStopping:
-    """
-    Early Stopping: terminate training if validation metric stops improving.
-    
-    Args:
-        patience (int): Number of epochs to wait for improvement before stopping. Default: 5
-        min_delta (float): Minimum change to qualify as improvement. Default: 0.001
-        mode (str): 'max' for metrics where higher is better (accuracy), 'min' for metrics where lower is better (loss)
-    """
     
     def __init__(self, patience: int = 5, min_delta: float = 0.001, mode: str = 'max'):
         self.patience = patience
