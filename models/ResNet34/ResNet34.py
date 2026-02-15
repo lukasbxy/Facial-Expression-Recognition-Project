@@ -4,7 +4,6 @@ ResNet-34 implementation for facial expression recognition.
 Key differences from ResNet18 baseline:
 - Uses a deeper block layout: [3, 4, 6, 3] instead of [2, 2, 2, 2].
 - Keeps the standard channel widths: 64, 128, 256, 512.
-- Does not include squeeze-and-excitation modules or extra dropout.
 """
 
 import torch.nn as nn

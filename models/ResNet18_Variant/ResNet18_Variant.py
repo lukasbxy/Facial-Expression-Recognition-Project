@@ -2,7 +2,7 @@
 ResNet-18 variant for facial expression recognition.
 
 Key differences from ResNet18 baseline:
-- Uses narrower channel widths: 32, 64, 128, 256 instead of 64, 128, 256, 512.
+- Uses narrower channel widths: 64, 128, 256, 512.
 - Uses stride=1 in the last stage, reducing total downsampling.
 - Adds dropout (p=0.3) before the final classifier.
 """

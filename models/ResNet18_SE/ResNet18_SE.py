@@ -4,7 +4,6 @@ ResNet-18_SE implementation for facial expression recognition.
 Key differences from ResNet18 baseline:
 - Adds squeeze-and-excitation (SE) blocks inside residual blocks.
 - Keeps the same depth and channel widths: 64, 128, 256, 512.
-- Does not add an extra dropout layer before the classifier.
 """
 
 import torch.nn as nn
