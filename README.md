@@ -137,6 +137,8 @@ dataset/
 | `--use-label-smoothing` | Off | Enable label smoothing |
 | `--use-class-weights` | Off | Apply class weights to the loss function (`CrossEntropyLoss`) |
 | `--use-adamw` | Off | ResNet only (`cct` already uses AdamW) |
+| `--disable-weighted-random-sampler`, `--disable-wrs` | Off | Disable Weighted Random Sampling of Train Dataset |
+| `--weight-power` | 1.0 | Set aggressiveness / weight of weightes random sampler in train dataset |
 
 ### Example Commands
 - Default:
