@@ -137,7 +137,7 @@ dataset/
 | `--use-label-smoothing` | Off | Enable label smoothing |
 | `--use-class-weights` | Off | Apply class weights to the loss function (`CrossEntropyLoss`) |
 | `--use-adamw` | Off | ResNet only (`cct` already uses AdamW) |
-| `--disable-weighted-random-sampler`, `--disable-wrs` | Off | Disable Weighted Random Sampling for the training dataset |
+| `--disable-wrs` | Off | Disable Weighted Random Sampling for the training dataset |
 | `--weight-power` | `1.0` | Controls the aggressiveness of the weighted random sampler for the training dataset. The weight is computed as $w_c = \left(\frac{1}{\mathrm{count}_c}\right)^p$. Only has an effect if the weighted random sampler is NOT disabled. |
 
 
