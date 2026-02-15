@@ -10,20 +10,6 @@ dataset/**/validation_set/*/*.jpg
 dataset/**/validation_set/*/*.png
 dataset/**/validation_set/*/*.jpeg
 
-# Legacy paths
-dataset/dataset_full/training_set/*/*.jpg
-dataset/dataset_full/training_set/*/*.png
-dataset/dataset_full/training_set/*/*.jpeg
-dataset/dataset_full/validation_set/*/*.jpg
-dataset/dataset_full/validation_set/*/*.png
-dataset/dataset_full/validation_set/*/*.jpeg
-dataset/dataset_sample/training_set/*/*.jpg
-dataset/dataset_sample/training_set/*/*.png
-dataset/dataset_sample/training_set/*/*.jpeg
-dataset/dataset_sample/validation_set/*/*.jpg
-dataset/dataset_sample/validation_set/*/*.png
-dataset/dataset_sample/validation_set/*/*.jpeg
-
 # Python
 *.pyc
 __pycache__/
@@ -40,10 +26,3 @@ logs/
 
 # Ignore runs
 runs/*/
-
-old/*
-training/test.py
-training/test2.py
-# Ignore old legacy folders
-models/*/checkpoints
-model_metrics
