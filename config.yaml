@@ -8,7 +8,7 @@ emotions:
   5: fear
 
 # DATASET CONFIGURATION
-# Pfade zu den Datasets
+# Paths to the datasets
 dataset:
   affectnet:
     train: ./dataset/Dataset_AffectNet+/dataset_full/training_set
@@ -30,29 +30,29 @@ dataset:
     train: ./dataset/Dataset_RAF_DB/dataset_full/training_set
     val: ./dataset/Dataset_RAF_DB/dataset_full/validation_set
 
-# Bild-Spezifikationen
+# Image specifications
 image:
   size: 64
 
 # Data Augmentation Configuration
-# Diese Augmentationen werden NUR beim Training angewendet (nicht bei der Validation)
+# These augmentations are applied ONLY during training (not during validation)
 augmentation:
-  # Rotation: Bilder um +-10° drehen (simuliert leicht gedrehte Köpfe)
+  # Rotation: rotate images by +-10° (simulates slightly tilted heads)
   rotation_degrees: 10
   
-  # Horizontal Flip: 50% Wahrscheinlichkeit für Links/Rechts-Spiegelung
+  # Horizontal flip: 50% probability of left/right mirroring
   horizontal_flip_prob: 0.5
   
-  # Random Resized Crop: Zufälliger Ausschnitt 90-100% (simuliert verschiedene Zoom-Level)
+  # Random resized crop: random crop of 90-100% (simulates different zoom levels)
   crop_scale_min: 0.9
   crop_scale_max: 1.0
   
-  # Color Jitter: Helligkeit und Kontrast leicht variieren
+  # Color jitter: slightly vary brightness and contrast
   brightness: 0.1
   contrast: 0.1
   saturation: 0.1
   
-  # Random Erasing: Kleine Bereiche ausradieren (simuliert Verdeckungen)
+  # Random erasing: erase small areas (simulates occlusions)
   erase_prob: 0.3
   erase_scale_min: 0.02
   erase_scale_max: 0.10
