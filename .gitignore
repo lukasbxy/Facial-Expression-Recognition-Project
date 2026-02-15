@@ -25,3 +25,6 @@ logs/
 
 # Ignore runs
 runs/*/
+
+# Ignore previous checkpoint locations
+models/*/checkpoints
