@@ -1,14 +1,13 @@
-dataset
 __MACOSX/*
 *.sbatch
 
-# Ignore all images in datasets, but keep folder structure
-dataset/**/training_set/*/*.jpg
-dataset/**/training_set/*/*.png
-dataset/**/training_set/*/*.jpeg
-dataset/**/validation_set/*/*.jpg
-dataset/**/validation_set/*/*.png
-dataset/**/validation_set/*/*.jpeg
+# Keep dataset folder structure placeholders
+!dataset/**/.gitkeep
+
+# Ignore dataset images recursively
+dataset/**/*.jpg
+dataset/**/*.jpeg
+dataset/**/*.png
 
 # Python
 *.pyc
