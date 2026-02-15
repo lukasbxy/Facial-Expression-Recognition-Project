@@ -22,6 +22,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import matplotlib
+
+# use non-interactive matplotlib backend (for servers / ssh)
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
@@ -35,23 +37,38 @@ from models import ResNet18_SE_Variant, ResNet18, ResNet18_SE, ResNet34, CCT
 # helpers
 # -----------------------------
 def total_variation(x):
+    """
+    Total variation loss.
+
+    Penalizes rapid changes in pixels and encourage smoother images with less high freq noise.
+    """
     tv_h = (x[:, :, 1:, :] - x[:, :, :-1, :]).abs().mean()
     tv_w = (x[:, :, :, 1:] - x[:, :, :, :-1]).abs().mean()
     return tv_h + tv_w
 
 
 def normalize(x, mean, std):
+    """
+    Normalize image tensor using mean and standard dev (std)
+    """
     mean = torch.tensor(mean, device=x.device).view(1,3,1,1)
     std = torch.tensor(std, device=x.device).view(1,3,1,1)
     return (x - mean) / std
 
 
 def tensor_to_img(x):
+    """
+    Convert tensor image (1,3,H,W) to numpy image (H,W,3)
+    for saving with matplotlib.
+    """
     x = x.detach().clamp(0,1)[0]
     return x.permute(1,2,0).cpu().numpy()
 
 
 def save_image(img_np, path, title):
+    """
+    Save numpy image using matplotlib.
+    """
     plt.figure(figsize=(4,4))
     plt.imshow(img_np)
     plt.axis("off")
@@ -62,6 +79,10 @@ def save_image(img_np, path, title):
 
 
 def load_init_image(path, size, device):
+    """
+    Load an image from disk and convert to tensor.
+    may be used as initialization instead of random noise.
+    """
     tfm = T.Compose([
         T.Resize((size,size)),
         T.ToTensor()
@@ -74,6 +95,12 @@ def load_init_image(path, size, device):
 # acces module
 # -----------------------------
 def get_module(model, name):
+    """
+    Get a module from the model using a string name.
+
+    Example:
+        "layer3.0.conv1"
+    """
     cur = model
     for part in name.split("."):
         if part.isdigit():
@@ -84,6 +111,9 @@ def get_module(model, name):
 
 
 class Hook:
+    """
+    Forward hook to capture activations.
+    """
     def __init__(self, module):
         self.act = None
         self.h = module.register_forward_hook(self.fn)
@@ -100,10 +130,14 @@ class Hook:
 # -----------------------------
 @torch.no_grad()
 def infer_channels(model, module_name, image_size, device):
-
+    """
+    Run dummy input through model to figure ut number of channels
+    in the target module.
+    """
     module = get_module(model, module_name)
     hook = Hook(module)
 
+    # dummy input img
     x = torch.zeros(1,3,image_size,image_size,device=device)
 
     _ = model(x)
@@ -118,6 +152,11 @@ def infer_channels(model, module_name, image_size, device):
 # objective
 # -----------------------------
 def topk_objective(act_ch, topk):
+    """
+    Calculate objective using top-k absolute activations.
+
+    This focuses on strongest responding regions.
+    """
 
     flat = act_ch.flatten(1)
 
@@ -139,6 +178,8 @@ def maximize_channel(
     device,
     init_img,
     topk,
+    # internal hyperparameters
+    # expose these if you want to experiment with them
     steps=400,
     lr=0.02,
     l2_weight=1e-4,
@@ -154,12 +195,14 @@ def maximize_channel(
         param = torch.randn(1,3,image_size,image_size,
                             device=device, requires_grad=True)
     else:
+        # initialize from real image (convert to logit space)
         eps = 1e-6
         img0 = init_img.clamp(eps,1-eps)
         param = torch.log(img0/(1-img0)).detach().clone().requires_grad_(True)
 
     opt = torch.optim.Adam([param], lr=lr)
 
+     # normalization constants (ImageNet)
     mean = (0.485,0.456,0.406)
     std  = (0.229,0.224,0.225)
 
@@ -167,27 +210,33 @@ def maximize_channel(
 
         opt.zero_grad()
 
+        # convert param to image using sigmoid
         img = torch.sigmoid(param)
 
-        # jitter
+        # random spatial jitter
         if jitter_px > 0:
             dx = random.randint(-jitter_px, jitter_px)
             dy = random.randint(-jitter_px, jitter_px)
             img = torch.roll(img, shifts=(dy,dx), dims=(2,3))
 
+        # normalize image before feeding to model
         x = normalize(img, mean, std)
 
         _ = model(x)
 
         act = hook.act
 
+        # select desired channel
         act_ch = act[:, channel_idx]
 
+        # compute objective
         obj = topk_objective(act_ch, topk)
 
+        # regularization losses
         l2 = img.pow(2).mean()
         tv = total_variation(img)
 
+        # total loss (negative because we maximize)
         loss = -obj + l2_weight*l2 + tv_weight*tv
 
         loss.backward()
@@ -225,6 +274,7 @@ def main():
 
     args = parser.parse_args()
 
+    # choose gpu if available
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     os.makedirs(args.outdir, exist_ok=True)
@@ -238,6 +288,7 @@ def main():
 
     model = model.to(device).eval()
 
+    # optional init image
     init_img = None
     if args.init_img:
         init_img = load_init_image(args.init_img,
