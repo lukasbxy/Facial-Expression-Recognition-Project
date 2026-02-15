@@ -568,7 +568,15 @@ def _log_dataset_mapping(datasets_list, dataset_names, emotion_mapping):
 
 
 
-def get_dataloaders(train_datasets=None, val_datasets=None, batch_size=32, num_workers=4, config_path='config.yaml', class_limit=None):
+def get_dataloaders(
+    train_datasets=None, 
+    val_datasets=None, 
+    batch_size:int = 32, 
+    num_workers:int = 4, 
+    config_path:str = 'config.yaml', 
+    class_limit = None,
+    use_weighted_sampler: bool = True,
+    weight_power: float = 1.0):
     # Build train and validation DataLoaders with fixed label mapping.
     (
         config,
@@ -623,31 +631,38 @@ def get_dataloaders(train_datasets=None, val_datasets=None, batch_size=32, num_w
             indices = ds.indices
             original_targets = ds.dataset.targets
             all_targets.extend([original_targets[i] for i in indices])
+    
     targets = np.array(all_targets)
     
-    if len(targets) > 0:
-        class_counts = np.bincount(targets, minlength=len(emotion_mapping))
+    train_sampler = None
+    if use_weighted_sampler and len(targets) > 0:
+        class_counts = np.bincount(targets, minlength=len(emotion_mapping)).astype(np.float64)
+
+        # avoid divide-by-zero for classes not present in the training split
         class_weights = np.zeros_like(class_counts, dtype=np.float64)
-        non_zero_mask = class_counts > 0
-        class_weights[non_zero_mask] = 1.0 / class_counts[non_zero_mask]
+        non_zero = class_counts > 0
+
+        # aggressiveness: (1/count)**p
+        p = float(weight_power)
+        class_weights[non_zero] = (1.0 / class_counts[non_zero]) ** p
+
         sample_weights = class_weights[targets]
+
         train_sampler = WeightedRandomSampler(
             weights=torch.as_tensor(sample_weights, dtype=torch.double),
             num_samples=len(targets),
             replacement=True
         )
-    else:
-        train_sampler = None
     
 
     train_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        sampler=train_sampler,
-        shuffle=False,  # sampler controls order
-        num_workers=num_workers,
-        pin_memory=True
-    )
+    train_dataset,
+    batch_size=batch_size,
+    sampler=train_sampler,
+    shuffle=(train_sampler is None),
+    num_workers=num_workers,
+    pin_memory=True
+)
     
     val_loader = DataLoader(
         val_dataset,
