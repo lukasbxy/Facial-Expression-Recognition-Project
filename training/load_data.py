@@ -539,34 +539,6 @@ def _load_split_datasets(train_paths, val_paths, emotion_mapping, train_transfor
     return train_datasets_list, val_datasets_list
 
 
-def _log_dataset_mapping(datasets_list, dataset_names, emotion_mapping):
-    # Print how folders were mapped for each dataset.
-    print("\n" + "=" * 70)
-    print("DATASET LABEL MAPPING (from config.yaml)")
-    print("=" * 70)
-    
-
-    print("Canonical mapping:")
-    for label in sorted(emotion_mapping.keys()):
-        print(f"  Label {label} = {emotion_mapping[label]}")
-    print("-" * 70)
-    
-
-    for ds, name in zip(datasets_list, dataset_names):
-        actual_ds = ds.dataset if hasattr(ds, 'dataset') else ds  # unwrap Subset
-        
-        if hasattr(actual_ds, 'get_mapping_summary'):
-            n_classes = len(actual_ds.present_emotions)
-            total_classes = len(emotion_mapping)
-            n_samples = len(ds)
-            
-            status = "✓" if n_classes == total_classes else f"⚠ {total_classes - n_classes} missing"
-            print(f"\n{name} ({n_samples} images, {n_classes}/{total_classes} classes) [{status}]")
-            print(actual_ds.get_mapping_summary())
-    
-    print("=" * 70 + "\n")
-
-
 
 def get_dataloaders(
     train_datasets=None, 
@@ -606,16 +578,6 @@ def get_dataloaders(
             class_limit=class_limit
         )
     
-    _log_dataset_mapping(
-        train_datasets_list,
-        [f"TRAIN: {name}" for name in train_datasets],
-        emotion_mapping
-    )
-    _log_dataset_mapping(
-        val_datasets_list,
-        [f"VAL: {name}" for name in val_datasets],
-        emotion_mapping
-    )
     
     # Merge selected datasets into one split per phase.
     train_dataset = ConcatDataset(train_datasets_list) if len(train_datasets_list) > 1 else train_datasets_list[0]
@@ -708,16 +670,6 @@ def get_datasets(train_datasets=None, val_datasets=None, batch_size=32, num_work
             class_limit=class_limit
         )
     
-    _log_dataset_mapping(
-        train_datasets_list,
-        [f"TRAIN: {name}" for name in train_datasets],
-        emotion_mapping
-    )
-    _log_dataset_mapping(
-        val_datasets_list,
-        [f"VAL: {name}" for name in val_datasets],
-        emotion_mapping
-    )
     
     train_dataset = ConcatDataset(train_datasets_list) if len(train_datasets_list) > 1 else train_datasets_list[0]
     val_dataset = ConcatDataset(val_datasets_list) if len(val_datasets_list) > 1 else val_datasets_list[0]
