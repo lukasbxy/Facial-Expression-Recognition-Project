@@ -131,9 +131,9 @@ def main():
     )
     
     parser.add_argument(
-        '--use-weighted-random-sampler', '--use-wrs',
+        '--disable-weighted-random-sampler', '--disable-wrs',
         action='store_true',
-        help='Use weighted random sampler to handle class imbalance'
+        help='Disable weighted random sampler used to handle class imbalance'
     )
     
     parser.add_argument(
@@ -145,11 +145,8 @@ def main():
     
     args = parser.parse_args()
     
-    # misc comments
-    print(f"[NOTE] Using Weighted Random Sampling must be set explicitly with --use-weighted-random-sample or --use-wrs. \nIt is not enabled by default, even if --use-class-weights or --weight-power is set.")
-    
-    if args.model.lower() == 'cct' and (args.use_weighted_random_sampler):
-        print(f"Weighted Random Sampler is not currently implemented for CCT. Ignoring --use-weighted-random-sampler flag. To be fixed tomorrow ...")
+    if args.model.lower() == 'cct' and (args.disable_weighted_random_sampler):
+        print(f"Disabling Weighted Random Sampler is not currently implemented for CCT. Ignoring --use-weighted-random-sampler flag.")
     
     # Validate dataset arguments
     if (args.train_datasets is None) != (args.val_datasets is None):
@@ -202,7 +199,9 @@ def main():
             use_label_smoothing=args.use_label_smoothing,
             use_class_weights=args.use_class_weights,
             class_limit=args.class_limit,
-            early_stopping_patience=args.patience
+            early_stopping_patience=args.patience,
+            use_weighted_sampler=not args.disable_weighted_random_sampler,
+            weight_power=args.weight_power
         )
     
     trainer.train()
