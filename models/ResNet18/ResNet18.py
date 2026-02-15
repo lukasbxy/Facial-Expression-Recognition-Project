@@ -1,17 +1,11 @@
 """
-ResNet‑18 Implementierung für Facial Expression Recognition.
+ResNet-18 baseline for facial expression recognition.
 
-Verwendung:
-    from models import ResNet18
-    model = ResNet18()
-
-Erwartete Eingabe:
-    Tensor mit Shape (BATCH_SIZE, 3, H, W) — Standardmäßig RGB-Bilder.
-    Das Modell ist für variable Bildgrößen ausgelegt; in diesem Projekt
-    werden typischerweise 64x64 Bilder verwendet.
-    
-Ausgabe:
-    Tensor mit Shape (BATCH_SIZE, 6) — Logits für 6 Emotionsklassen:
+Key points:
+- Reference baseline used to compare other ResNet variants in this project.
+- Standard channel widths across stages: 64, 128, 256, 512.
+- Replaces the original 7x7 convolution with a 3x3 convolution.
+- First convolution has stride = 1 and there is no initial max-pooling layer.
 """
 
 import torch.nn as nn

@@ -1,17 +1,10 @@
 """
-ResNet‑34 Implementierung für Facial Expression Recognition.
+ResNet-34 implementation for facial expression recognition.
 
-Verwendung:
-    from models import ResNet34
-    model = ResNet34()
-
-Erwartete Eingabe:
-    Tensor mit Shape (BATCH_SIZE, 3, H, W) — Standardmäßig RGB-Bilder.
-    Das Modell ist für variable Bildgrößen ausgelegt; in diesem Projekt
-    werden typischerweise 64x64 Bilder verwendet.
-    
-Ausgabe:
-    Tensor mit Shape (BATCH_SIZE, 6) — Logits für 6 Emotionsklassen:
+Key differences from ResNet18 baseline:
+- Uses a deeper block layout: [3, 4, 6, 3] instead of [2, 2, 2, 2].
+- Keeps the standard channel widths: 64, 128, 256, 512.
+- Does not include squeeze-and-excitation modules or extra dropout.
 """
 
 import torch.nn as nn

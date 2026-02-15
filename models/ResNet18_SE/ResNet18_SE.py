@@ -1,17 +1,10 @@
 """
-ResNet‑18 Implementierung für Facial Expression Recognition.
+ResNet-18_SE implementation for facial expression recognition.
 
-Verwendung:
-    from models import ResNet18
-    model = ResNet18()
-
-Erwartete Eingabe:
-    Tensor mit Shape (BATCH_SIZE, 3, H, W) — Standardmäßig RGB-Bilder.
-    Das Modell ist für variable Bildgrößen ausgelegt; in diesem Projekt
-    werden typischerweise 64x64 Bilder verwendet.
-    
-Ausgabe:
-    Tensor mit Shape (BATCH_SIZE, 6) — Logits für 6 Emotionsklassen:
+Key differences from ResNet18 baseline:
+- Adds squeeze-and-excitation (SE) blocks inside residual blocks.
+- Keeps the same depth and channel widths: 64, 128, 256, 512.
+- Does not add an extra dropout layer before the classifier.
 """
 
 import torch.nn as nn

@@ -1,25 +1,14 @@
 """
-Compact Convolutional Transformers (CCT) Implementierung für Facial Expression Recognition.
+Compact Convolutional Transformer (CCT) implementation for facial expression recognition.
 
-Basierend auf: Hassani et al. "Escaping the Big Data Paradigm with Compact Transformers" (2021)
+Based on: Hassani et al. "Escaping the Big Data Paradigm with Compact Transformers" (2021)
 https://arxiv.org/abs/2104.05704
-Ursprüngliche Implementierung: https://github.com/SHI-Labs/Compact-Transformers
+Original implementation: https://github.com/SHI-Labs/Compact-Transformers
 
-Das CCT-Modell kombiniert konvolutionale Tokenisierung mit Transformer-Architektur
-für effiziente Bildklassifikation mit minimalen Trainingsdaten.
-
-Verwendung:
-    from models.CCT.CCT import CCT
-    model = CCT()
-    output = model(x)
-
-Erwartete Eingabe:
-    Tensor mit Shape (BATCH_SIZE, 3, H, W) — RGB-Bilder.
-    Standard: 64x64 Bilder für Facial Expression Recognition.
-    Das Modell ist für variable Bildgrößen ausgelegt.
-
-Ausgabe:
-    Tensor mit Shape (BATCH_SIZE, 6) — Logits für 6 Emotionsklassen:
+Project-specific differences from the original ImageNet-oriented setup:
+- Uses 64x64 images by default for facial expression recognition.
+- Uses a compact default config: embedding_dim=384, num_layers=8, num_heads=6.
+- Uses a 2-layer convolutional tokenizer by default.
 """
 
 import torch
