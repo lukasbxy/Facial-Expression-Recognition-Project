@@ -2,22 +2,20 @@
 Inference Script for iterating over a folder of images and writing the corresponding classification 
 scores to a CSV file.
 
-Quickstart
-----------
-1) Create and activate a virtual environment
+How to use:
+1. Create and activate a virtual environment
 
 macOS/Linux:
     python3 -m venv venv
     source venv/bin/activate
-
 Windows (PowerShell):
-    py -m venv venv
+    python -m venv venv
     .\\venv\\Scripts\\Activate.ps1
 
-2) Install dependencies
+2. Install dependencies
     pip install -r requirements.txt
 
-3) Run
+3. Run
     python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model "Choose from ['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct']" --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
@@ -41,8 +39,12 @@ from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34, CCT
 
 EMOTIONS = ["Happiness", "Surprise", "Sadness", "Anger", "Disgust", "Fear"]
 
+TRANSFORM = transforms.Compose([
+    transforms.Resize((64, 64)),
+    transforms.ToTensor(),
+])
 
-def load_model(model_name,model_weights,device):
+def load_model(model_name, model_weights, device):
     model_dict = {
         'resnet18': ResNet18,
         'resnet18_se': ResNet18_SE,
@@ -64,13 +66,9 @@ def load_model(model_name,model_weights,device):
     model.eval()
     return model
 
-def classify_image(model, image_path,device):
-    transform = transforms.Compose([
-        transforms.Resize((64, 64)),
-        transforms.ToTensor(),
-    ])
+def classify_image(model, image_path, device):
     image = Image.open(image_path).convert("RGB")
-    img_tensor = transform(image).unsqueeze(0).to(device)
+    img_tensor = TRANSFORM(image).unsqueeze(0).to(device)
 
     with torch.inference_mode():
         out = model(img_tensor)
@@ -78,7 +76,7 @@ def classify_image(model, image_path,device):
 
     return preds.cpu().numpy()[0]
 
-def write_csv(folder_path,model_name, model_weights,output_csv):
+def write_csv(folder_path, model_name, model_weights, output_csv):
 
     if torch.cuda.is_available():
         device = torch.device('cuda')
@@ -89,11 +87,14 @@ def write_csv(folder_path,model_name, model_weights,output_csv):
 
     print(f"Using Device: {device}")
 
-    model = load_model(model_name, model_weights,device)
+    model = load_model(model_name, model_weights, device)
     print(f"Using model {model.__class__.__name__}")
 
     folder = Path(folder_path)
     image_files = sorted([p for p in folder.iterdir() if p.suffix.lower() in {".jpg", ".jpeg", ".png"}])
+    if not image_files:
+        print("Error: No images found in input folder.", file=sys.stderr)
+        sys.exit(1)
 
     results = [] 
 
@@ -111,7 +112,7 @@ def write_csv(folder_path,model_name, model_weights,output_csv):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Classifying Emotions in images and write probabilites to CSV file'
+        description='Classifying Emotions in images and write probabilities to CSV file'
     )
     parser.add_argument(
         '--folder_path',
@@ -132,7 +133,7 @@ def main():
         "--model_path",
         type = str,
         required = True,
-        help = "Path to model chekpoint (.pt)",
+        help = "Path to model checkpoint (.pt)",
     )
     parser.add_argument(
         "--output_csv",
@@ -142,8 +143,12 @@ def main():
     )
     
     args = parser.parse_args()
-    
 
+    input_path = Path(args.folder_path)
+    if not input_path.exists() or not input_path.is_dir():
+        print("Error: Input folder does not exist or is not a directory.", file=sys.stderr)
+        sys.exit(1)
+    
     try:
         write_csv(
             folder_path=args.folder_path,
@@ -152,7 +157,7 @@ def main():
             output_csv=args.output_csv,
         )
     except Exception as e:
-        print(f"Fehler: {str(e)}", file=sys.stderr)
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 

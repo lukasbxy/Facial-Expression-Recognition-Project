@@ -344,7 +344,7 @@ class App:
                 p = n/max(1,total)
                 self.root.after(0, lambda p=p, n=n, total=total : (
                 self.export_bar.set(p),
-                self.status.configure(text=f"EXPORT: {n}/{total} ({int(p*100)}%)")
+                self.status.configure(text=f"Exporting: {n}/{total} ({int(p*100)}%)")
                 ))
         
         cap.release()
@@ -357,7 +357,7 @@ class App:
     def _webcam(self):
         if not self.model or self.running: return
         self.cap = cv2.VideoCapture(0)
-        if not self.cap.isOpened(): return messagebox.showerror("Error", "No Webcam!")
+        if not self.cap.isOpened(): return messagebox.showerror("Error", "No Webcam detected")
         self.running, self.frame_count = True, 0
         self._loop()
 
