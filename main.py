@@ -1,11 +1,24 @@
+"""
+Script to train facial expression recognition models.
+
+Run `python main.py --help` to see all valid CLI arguments.
+
+How to use (examples):
+    python main.py
+    python main.py --model resnet18 --epochs 50 --use-scheduler --use-label-smoothing --use-class-weights
+    python main.py --model cct --train-datasets all --val-datasets raf_db
+
+It loads the selected model and datasets, picks the matching trainer, and starts training.
+"""
+
 import argparse
-from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34, CCT, ResNet18_Variant
+from models import ResNet18, ResNet18_SE, ResNet18_Variant, ResNet18_SE_Variant, ResNet34, CCT
 from training.ResNetTrainer import ResNetTrainer
 from training.CCTTrainer import CCTTrainer
 
 
 def get_model(model_name: str):
-    """Load the desired model based on the name."""
+    """Return a model instance for the given name."""
     models = {
         'resnet18': ResNet18,
         'resnet18_se': ResNet18_SE,
@@ -22,28 +35,9 @@ def get_model(model_name: str):
 
 
 def main():
+    """Parse arguments and run training."""
     parser = argparse.ArgumentParser(
-        description='Train Facial Expression Recognition Models',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python main.py --model resnet18_se_variant --epochs 50 --lr 0.001
-  python main.py --model resnet18 --use-adamw
-  python main.py --model resnet18_se --epochs 100 --use-scheduler --use-label-smoothing
-  python main.py --model resnet18 --use-class-weights --use-label-smoothing
-  
-  # Dataset selection with "all" shortcut
-  python main.py --model resnet18 --train-datasets all --val-datasets all
-  python main.py --model resnet18 --train-datasets all --val-datasets raf_db
-  python main.py --model resnet18 --train-datasets affectnet fer2013 --val-datasets human_emotions
-  
-  # Class limiting (helps with class imbalance)
-  python main.py --model resnet18 --train-datasets all --val-datasets all --class-limit 50000
-  python main.py --model resnet18 --train-datasets all --val-datasets raf_db --class-limit 30000
-  
-  # Combined examples
-  python main.py --model resnet18 --train-datasets all --val-datasets all --class-limit 40000 --use-adamw --use-scheduler
-        """
+        description='Train facial expression recognition models.'
     )
     
     parser.add_argument(
@@ -159,7 +153,7 @@ Examples:
     
     # Select trainer based on model type
     if args.model.lower() == 'cct':
-        # CCT: Defaults sind 0.0005 (lr) und 0.05 (weight_decay)
+        # CCT: Defaults are 0.0005 (lr) and 0.05 (weight_decay)
         trainer = CCTTrainer(
             model,
             num_epochs=args.epochs,
@@ -175,7 +169,7 @@ Examples:
             early_stopping_patience=args.patience
         )
     else:
-        # ResNet: Defaults sind 0.001 (lr) und 0.0001 (weight_decay)
+        # ResNet: Defaults are 0.001 (lr) and 0.0001 (weight_decay)
         trainer = ResNetTrainer(
             model,
             num_epochs=args.epochs,
