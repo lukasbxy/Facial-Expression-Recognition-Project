@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""
+r"""
 Script for performing  activation maximization to visualize what a given channel in a model is looking for.
 
-Sample usage
-python -m activation_maximization \
-  --ckpt path/to/checkpoint.pt \
-  --module layer3.0 \
-  --channels 0, 2, 4, 8, 16, 32 \
-  --init-image path/to/image.jpg \
+How to use: 
+python demo/activation_maximization.py \
+  --ckpt "PATH/TO/CHECKPOINT" \
+  --module "layer3.0" \
+  --channels "0,2,4,8,16,32" \
+  --init_img "PATH/TO/INITIAL/IMAGE" \
   --topk 150 \
-  --outdir activation_maximization_out
+  --outdir "PATH/TO/OUT/DIRECTORY"
+
 """
 
 import os
-import math
 import random
 import argparse
+import sys
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 import matplotlib
@@ -29,6 +29,10 @@ import matplotlib.pyplot as plt
 
 from PIL import Image
 import torchvision.transforms as T
+
+from pathlib import Path
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from models import ResNet18_SE_Variant, ResNet18, ResNet18_SE, ResNet34, CCT
 
@@ -131,7 +135,7 @@ class Hook:
 @torch.no_grad()
 def infer_channels(model, module_name, image_size, device):
     """
-    Run dummy input through model to figure ut number of channels
+    Run dummy input through model to figure out number of channels
     in the target module.
     """
     module = get_module(model, module_name)
@@ -264,7 +268,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     # currently only important args are exposed, but feel free to add more if you want to experiment with different things
-    parser.add_argument("--ckpt", type=str, default="")
+    parser.add_argument("--ckpt", required=True, type=str)
     parser.add_argument("--outdir", type=str, default="out")
     parser.add_argument("--module", type=str, default="layer3.0")
     parser.add_argument("--image_size", type=int, default=64)
@@ -275,7 +279,12 @@ def main():
     args = parser.parse_args()
 
     # choose gpu if available
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = torch.device('mps')
+    else:
+        device = torch.device('cpu')
 
     os.makedirs(args.outdir, exist_ok=True)
 

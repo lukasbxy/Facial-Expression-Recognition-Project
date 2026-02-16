@@ -179,13 +179,13 @@ Script for performing  activation maximization to visualize what a given channel
 
 **How to start:**
  ```bash 
-  python -m activation_maximization \
-  --ckpt path/to/checkpoint.pt \
-  --module layer3.0 \
-  --channels 0, 2, 4, 8, 16, 32 \
-  --init-image path/to/image.jpg \
-  --topk 150 \
-  --outdir activation_maximization_out
+  python demo/activation_maximization.py \
+    --ckpt "PATH/TO/CHECKPOINT.pt" \
+    --module "layer3.0" \
+    --channels "0,2,4,8,16,32" \
+    --init_img "PATH/TO/INITIAL/IMAGE" \
+    --topk 150 \
+    --outdir "PATH/TO/OUT/DIRECTORY"
 ```   
 **Options :**
 - `channels` specifies which channels to perform activation maximization on.
@@ -208,7 +208,11 @@ python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se
 - `--model` supports all model variants of the repository
 - `--cam` supports the previously mentioned CAM methods
 - `--target_layer` applies CAM method to specified layer 
-- `--output_path` is used to specify output folder
+- `--output_path` is used to specify output folder  
+
+This demo uses pytorch-grad-cam by Jacob Gildenblat:
+https://github.com/jacobgil/pytorch-grad-cam
+Licensed under MIT License.
 ### demo_csv.py 
 Inference Script for iterating over a folder of images and writing the corresponding classification scores to a CSV file.  
 
