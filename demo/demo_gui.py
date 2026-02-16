@@ -1,25 +1,30 @@
 r"""
 Facial Expression Recognition GUI for live model inference
 
----How to use---
+How to use:
 
 1. Change into project directory
 
-2. Create virtual environment
-macOS / Linux: python3 -m venv venv
-Windows: python -m venv venv
+2. Create  and activate virtual environment
 
-3. Activate virtual environment
-macOS / Linux: source venv/bin/activate      
-Windows: venv\Scripts\activate      
+macOS / Linux: 
+    python3 -m venv venv
+    source venv/bin/activate 
+Windows (PowerShell): 
+    python -m venv venv
+    .\venv\Scripts\Activate.ps1  
 
-4. Install requirements
+3. Install requirements
 pip: pip install -r requirements.txt
 
-5. Start GUI
+4. Start GUI
 python demo/demo_gui.py
 
-6. Press Escape to leave Full-Screen Mode
+5. Press Escape to leave Full-Screen Mode
+
+IMPORTANT: If you import a checkpoint, make sure that it is in the right format, is in the right folder runs/ResNet18_SE_Variant/timestamp/checkpoints/*
+Only use trusted checkpoints as weights_only is set to false.
+
 """
 from pathlib import Path
 import sys, threading
@@ -76,6 +81,7 @@ class App:
         self.root.title("Facial Expression AI")
         self.root.attributes('-fullscreen', True)
         self.root.bind('<Escape>', lambda e: self.root.attributes('-fullscreen', False))
+        self.root.protocol('WM_DELETE_WINDOW', self._on_close)
         self.root.update_idletasks()
         self.root.update()
         
@@ -92,7 +98,7 @@ class App:
         self.smooth_probs = np.zeros(6)
         
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() and torch.backends.mps.is_built() else 'cpu')
         
         self._build_ui()
         self._load_model()
@@ -117,11 +123,17 @@ class App:
     def _load_model(self, _=None):
         path = PROJECT_ROOT / self.ckpt_var.get()
         if not path.exists(): return
-        self.model = ResNet18_SE_Variant(num_classes=6)
-        self.model.load_state_dict(torch.load(path, map_location=self.device, weights_only=False)['model_state'])
-        self.model.to(self.device).eval()
-        self.gradcam = GradCAM(self.model, self.model.layer4)
-        self.status.configure(text=f"Model ready: {self.ckpt_var.get()}")
+        try:
+            self.model = ResNet18_SE_Variant(num_classes=6)
+            self.model.load_state_dict(torch.load(path, map_location=self.device, weights_only=False)['model_state'])
+            self.model.to(self.device).eval()
+            self.gradcam = GradCAM(self.model, self.model.layer4[-1])
+            self.status.configure(text=f"Model ready: {self.ckpt_var.get()}")
+        except Exception as e:
+            self.model = None
+            self.gradcam = None
+            self.status.configure("Model load failed")
+            messagebox.showerror("Model load failed", str(e))
 
     # building GUI
     def _build_ui(self):
@@ -140,7 +152,7 @@ class App:
 
         pts = self._get_checkpoints()
         if not pts:
-            messagebox.showwarning("Error", "No checkpoints found. Please train a model first.")
+            messagebox.showwarning("Warning", "No checkpoints found. Please train a model first.")
         
         self.ckpt_var = ctk.StringVar(value=pts[0] if pts else "")
         self.ckpt_menu = ctk.CTkOptionMenu(controls, variable=self.ckpt_var, values=pts if pts else ["No checkpoints"], command=self._load_model, width=300)
@@ -151,7 +163,7 @@ class App:
         btn_frame.grid(row=0, column=1, sticky="e", padx=(0,10))
 
         buttons = [("Import", self._import, None), ("Export", self._export, COLORS["high"]), 
-                ("Webcam", self._webcam, None), ("Stop", self._stop, COLORS["low"]), ("Exit", self.root.quit, "#444")]
+                ("Webcam", self._webcam, None), ("Stop", self._stop, COLORS["low"]), ("Exit", self._on_close, "#444")]
         
         self.btns= []
         for i, (t,c,fg) in enumerate (buttons):
@@ -181,7 +193,7 @@ class App:
 
         stats = ctk.CTkFrame(stats_outer, width=200)
         stats.pack(expand=True)
-        ctk.CTkLabel(stats, text="Stats", font=("Helvetica", 14, "bold")).pack(pady=(15, 10))
+        ctk.CTkLabel(stats, text="Class Probabilities", font=("Helvetica", 14, "bold")).pack(pady=(15, 10))
         
         self.bars = {}
         for emo in EMOTIONS:
@@ -212,10 +224,25 @@ class App:
         self.export_bar.grid(row=1, column=0, sticky ="ew")
         self.export_bar.grid_remove()
 
+    def _on_close(self):
+        try:
+            self._stop()
+        finally:
+            self.root.quit()
+
     def _lock_ui(self, lock=True):
         state = "disabled" if lock else "normal"
-        for b in self.btns: b.configure(state=state)
+        for b in self.btns:
+            if getattr(b, 'cget', lambda *_: '')('text') == 'Exit':
+                continue
+            b.configure(state = state)
         self.ckpt_menu.configure(state=state)
+
+    def _update_bars(self, probs):
+        for i, e in enumerate (EMOTIONS):
+            p = float(probs[i]) if probs is not None else 0.0
+            self.bars[e].configure(progress_color=COLORS["high"] if p > 0.6 else COLORS["mid"] if p > 0.3 else COLORS["low"])
+            self.bars[e].set(p)
 
     # processing
     def _process(self, frame, skip=False, draw_stats = False):
@@ -246,10 +273,6 @@ class App:
         smooth_idx = int(self.smooth_probs.argmax())
         emo = EMOTIONS[smooth_idx]
         conf = float(self.smooth_probs[smooth_idx])
-        for i, e in enumerate(EMOTIONS):
-            p = self.smooth_probs[i]
-            self.bars[e].configure(progress_color=COLORS["high"] if p > 0.6 else COLORS["mid"] if p > 0.3 else COLORS["low"])
-            self.bars[e].set(p)
             
         x, y, fw, fh, x1, y1, x2, y2 = self.last_result[2]
         hm = self.last_result[3]
@@ -272,7 +295,7 @@ class App:
             tw = 180
             cv2.rectangle(orig, (w - tw, 0), (w, 220), (30, 30, 30), -1)
             cv2.putText(orig, "STATS", (w - tw + 10, 25), cv2.FONT_HERSHEY_DUPLEX, 0.6, (200, 200, 200), 1)
-            for i, (e, prob) in enumerate(zip(EMOTIONS, probs)):
+            for i, (e, prob) in enumerate(zip(EMOTIONS, self.smooth_probs)):
                 yy = 55 + i * 28
                 cv2.putText(orig, f"{e[:4]}:", (w - tw + 10, yy), cv2.FONT_HERSHEY_DUPLEX, 0.4, (255, 255, 255), 1)
                 cv2.rectangle(orig, (w - tw + 60, yy - 8), (w - 15, yy + 2), (60, 60, 60), -1)
@@ -282,7 +305,11 @@ class App:
         hmc = cv2.applyColorMap(cv2.resize(hm, (x2-x1, y2-y1)), cv2.COLORMAP_JET)
         sal[y1:y2, x1:x2] = cv2.addWeighted(frame[y1:y2, x1:x2], 0.5, hmc, 0.5, 0)
         cv2.rectangle(sal, (x, y), (x+fw, y+fh), (255, 255, 255), 1)
-        return orig, sal, emo, conf, probs
+        return orig, sal, emo, conf, self.smooth_probs.copy()
+    
+    def _reset_stats(self):
+        self.smooth_probs = np.zeros(6, dtype = np.float32)
+        self.last_result = ('-', 0, None, None, np.zeros(6, dtype = np.float32))
 
     def _show(self, left, right):
         for canvas, img in [(self.c1, left), (self.c2, right)]:
@@ -306,19 +333,27 @@ class App:
     def _preview(self, path):
         cap = cv2.VideoCapture(path)
         self.preview_running = True
-        for n in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
-            if self.preview_running == False:
-                break
-            ret, f = cap.read()
-            if not ret: break
-            l, r, e, c, _ = self._process(f, skip=(n % 3 != 0), draw_stats= False)
-            if n % 2 == 0:
-                self.root.after(0, lambda l=l, r=r, e=e, c=c, n=n: (
-                self._show(l, r),
-                self.status.configure(text=f"Preview: {e} ({c*100:.1f}%) | Frame {n}")
-                ))
-        cap.release()
-        self.status.configure(text="Preview stopped. Ready for export.")
+        total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        try:
+            for n in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
+                if self.preview_running == False:
+                    break
+                ret, f = cap.read()
+                if not ret: break
+                l, r, e, c, probs = self._process(f, skip=(n % 3 != 0), draw_stats= False)
+                if n % 2 == 0:
+                    self.root.after(0, lambda l=l, r=r, e=e, c=c, n=n, probs = probs, total = total: (
+                        self._show(l, r),
+                        self._update_bars(probs),
+                        self.status.configure(text=f"Preview: {e} ({c*100:.1f}%) | Frame {n} / {total}")
+                    ))
+        except Exception as e:
+            if self.root.winfo_exists():
+                self.root.after(0, lambda e = e: messagebox.showerror("Preview failed", str(e)))
+        finally:   
+            cap.release()
+            self.preview_running = False
+            self.root.after(0, lambda: self.status.configure(text="Preview stopped. Ready for export."))
 
     def _export(self):
         if not self.video_path: return messagebox.showwarning("Warning", "Please import video.")
@@ -327,32 +362,52 @@ class App:
 
     def _run_export(self, out_path):
         self.preview_running = False
-        self._lock_ui(True)
+        self.root.after(0, lambda: self._lock_ui(True))
+
         cap = cv2.VideoCapture(self.video_path)
+        if not cap.isOpened():
+            self.root.after(0, lambda: (self._lock_ui(False), messagebox.showerror("Error", "Could not open input video.")))
+            return
+        
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         w, h = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        out = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w * 2, h))
-        self.root.after(0, lambda: (self.export_bar.set(0), self.export_bar.grid()))
 
-        for n in range(total):
-            ret, f = cap.read()
-            if not ret: break
-            l, r, _, _, _ = self._process(f, skip=(n % 5 != 0), draw_stats=True)
-            out.write(np.hstack([l, r]))
-            if n % 10 == 0:
-                p = n/max(1,total)
-                self.root.after(0, lambda p=p, n=n, total=total : (
-                self.export_bar.set(p),
-                self.status.configure(text=f"Exporting: {n}/{total} ({int(p*100)}%)")
-                ))
+        out = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w * 2, h))
+        if not out.isOpened():
+            cap.release()
+            self.root.after(0, lambda: (self._lock_ui(False), messagebox.showerror("Error", "Could not open video writer.")))
+            return
         
-        cap.release()
-        out.release()
-        self.root.after(0, lambda: self.export_bar.grid_remove())
-        self._lock_ui(False)
-        self.status.configure(text=f"Export finished: {out_path}")
-        messagebox.showinfo("Success", f"Video saved at:\n{out_path}")
+        self.root.after(0, lambda: (self.export_bar.set(0), self.export_bar.grid()))
+        success = True 
+        err_msg = None 
+        try:
+            for n in range(total):
+                ret, f = cap.read()
+                if not ret: break
+                l, r, _, _, probs = self._process(f, skip=(n % 5 != 0), draw_stats=True)
+                out.write(np.hstack([l, r]))
+                if n % 10 == 0:
+                    p = n/max(1,total)
+                    self.root.after(0, lambda p=p, n=n, probs = probs, total=total : (
+                        self.export_bar.set(p),
+                        self._update_bars(probs),
+                        self.status.configure(text=f"Exporting: {n}/{total} ({int(p*100)}%)")
+                    ))
+        except Exception as e:
+            success = False 
+            err_msg = str(e)
+        finally:
+            cap.release()
+            out.release()
+            self.root.after(0, lambda: self.export_bar.grid_remove())
+            self.root.after(0, lambda: self._lock_ui(False))
+            if success:
+                self.root.after(0, lambda: self.status.configure(text=f"Export finished: {out_path}"))
+            else:
+                self.root.after(0, lambda: self.status.configure(text="Export failed."))
+                self.root.after(0, lambda: messagebox.showerror("export failed", err_msg or "Unknown error"))
 
     def _webcam(self):
         if not self.model or self.running: return
@@ -365,8 +420,9 @@ class App:
         if not self.running: return
         ret, f = self.cap.read()
         if ret:
-            l, r, e, c, _ = self._process(f, skip=(self.frame_count % 3 != 0), draw_stats=False)
+            l, r, e, c, probs = self._process(f, skip=(self.frame_count % 3 != 0), draw_stats=False)
             self._show(l, r)
+            self._update_bars(probs)
             self.status.configure(text=f"Live: {e} ({c*100:.1f}%)")
             self.frame_count += 1
         self.root.after(20, self._loop)
@@ -375,7 +431,8 @@ class App:
         self.running = False
         self.preview_running = False
         if self.cap: self.cap.release(); self.cap = None
-        for b in self.bars.values(): b.set(0)
+        self._reset_stats()
+        self._update_bars(self.smooth_probs)
         self.c1.delete("all"); self.c2.delete("all")
         self.status.configure(text="Stopped")
 
