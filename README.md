@@ -158,3 +158,71 @@ Training artifacts are saved in `runs/<ModelClass>/<timestamp>/`, including:
 - `metrics.csv`
 - `checkpoints/best.pt` and `checkpoints/last.pt`
 - `confusion_matrices/` (frequency controlled by `--cm-every`)
+
+## Demo & Visualization 
+The repository offers 5 different scripts for inference and visualization.
+### Setup
+- Change into project directory
+- `python3.12 -m venv .venv`
+- macOS/Linux: `source .venv/bin/activate` | Windows: `.venv\Scripts\Activate.ps1`
+- `pip install -r requirements.txt`
+### demo_gui.py
+Interactive application for facial emotion recognition and visualization using Gradcam. Options include live Webcam inference and video import and export.  
+Full functionality is only given when checkpoints are present in the runs folder for ResNet18_SE_Variant. Only use with trusted checkpoints.  
+
+**How to start:**
+```bash
+python demo/demo_gui.py
+```
+### activation_maximization.py 
+Script for performing  activation maximization to visualize what a given channel in a model is looking for.  
+
+**How to start:**
+ ```bash 
+  python -m activation_maximization \
+  --ckpt path/to/checkpoint.pt \
+  --module layer3.0 \
+  --channels 0, 2, 4, 8, 16, 32 \
+  --init-image path/to/image.jpg \
+  --topk 150 \
+  --outdir activation_maximization_out
+```   
+**Options :**
+- `channels` specifies which channels to perform activation maximization on.
+- `outdir`specifies in which directory the images are saved.
+### demo_cam.py 
+Script for generating saliency heatmaps for all images in a given folder.  
+Supported CAM Methods:
+- `GradCAM`: use as `gradcam`
+- `GradCAMPlusPlus` use as `plusplus`
+- `EigenCAM` use as `eigen`
+- `ScoreCAM` use as `score`
+- `LayerCAM`  use as `layer`
+
+**How to start:**
+```bash
+python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
+```  
+
+**Options :**
+- `--model` supports all model variants of the repository
+- `--cam` supports the previously mentioned CAM methods
+- `--target_layer` applies CAM method to specified layer 
+- `--output_path` is used to specify output folder
+### demo_csv.py 
+Inference Script for iterating over a folder of images and writing the corresponding classification scores to a CSV file.  
+
+**How to start:** 
+```bash
+python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
+```  
+**Options include:**
+- `--model`supports all model variants of the repository
+- `--output_csv`specifies where to save the .csv file
+### visualize_model.py
+Script for generating architecture visualizations for the repository's supported models.  
+  
+**How to start:**
+ ```bash
+ python demo/visualize_model.py --model resnet18
+ ```
