@@ -3,7 +3,9 @@ Inference Script for iterating over a folder of images and writing the correspon
 scores to a CSV file.
 
 How to use:
-1. Create and activate a virtual environment
+1. Change into project directory
+
+2. Create and activate a virtual environment
 
 macOS/Linux:
     python3 -m venv venv
@@ -12,10 +14,10 @@ Windows (PowerShell):
     python -m venv venv
     .\\venv\\Scripts\\Activate.ps1
 
-2. Install dependencies
+3. Install dependencies
     pip install -r requirements.txt
 
-3. Run
+4. Run
     python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model "Choose from ['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct']" --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
