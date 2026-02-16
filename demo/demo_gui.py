@@ -132,7 +132,7 @@ class App:
         except Exception as e:
             self.model = None
             self.gradcam = None
-            self.status.configure("Model load failed")
+            self.status.configure(text = "Model load failed")
             messagebox.showerror("Model load failed", str(e))
 
     # building GUI
@@ -334,8 +334,10 @@ class App:
         cap = cv2.VideoCapture(path)
         self.preview_running = True
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        success = True 
+        err_msg = None 
         try:
-            for n in range(int(cap.get(cv2.CAP_PROP_FRAME_COUNT))):
+            for n in range(total):
                 if self.preview_running == False:
                     break
                 ret, f = cap.read()
@@ -348,12 +350,16 @@ class App:
                         self.status.configure(text=f"Preview: {e} ({c*100:.1f}%) | Frame {n} / {total}")
                     ))
         except Exception as e:
-            if self.root.winfo_exists():
-                self.root.after(0, lambda e = e: messagebox.showerror("Preview failed", str(e)))
+            success = False
+            err_msg = str(e)
         finally:   
             cap.release()
             self.preview_running = False
-            self.root.after(0, lambda: self.status.configure(text="Preview stopped. Ready for export."))
+            if success:
+                self.root.after(0, lambda: self.status.configure(text="Preview stopped. Ready for export."))
+            else:
+                self.root.after(0, lambda: self.status.configure(text  = "Preview failed"))
+                self.root.after(0, lambda: messagebox.showerror("Preview failed", err_msg or "Unknown error")) 
 
     def _export(self):
         if not self.video_path: return messagebox.showwarning("Warning", "Please import video.")
