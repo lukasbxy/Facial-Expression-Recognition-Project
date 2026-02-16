@@ -1,10 +1,10 @@
 # Facial Expression Recognition Project
 
 ## Project Team
-- **Paul Thiesse** - p.thiesse@campus.lmu.de
-- **Kaan Savaş** - k.savas@campus.lmu.de
-- **Rasmus Genuit** - r.genuit@campus.lmu.de
-- **Lukas Boguth** - l.boguth@campus.lmu.de
+- **Paul Thiesse** - p.thiesse@campus.lmu.de ('hellany', 'THIESSE PAUL')
+- **Kaan Savaş** - k.savas@campus.lmu.de ('kaiuu75')
+- **Rasmus Genuit** - r.genuit@campus.lmu.de ('rg20000')
+- **Lukas Boguth** - l.boguth@campus.lmu.de ('Lukas Boguth', 'lukasbxy')
 
 ## Project Overview
 The goal of this project is to develop a deep learning system that automatically classifies human emotions from facial images. The system is able to:
@@ -139,7 +139,7 @@ dataset/
 | `--use-class-weights` | Off | Apply class weights to the loss function (`CrossEntropyLoss`) |
 | `--use-adamw` | Off | ResNet only (`cct` already uses AdamW) |
 | `--disable-weighted-random-sampler`, `--disable-wrs` | Off | Disable Weighted Random Sampling for the training dataset (ResNet and CCT) |
-| `--weight-power`, `--wp` | `1.0` | Controls the aggressiveness of the weighted random sampler for the training dataset. The weight is computed as $w_c = \left(\frac{1}{\mathrm{count}_c}\right)^p$. Only has an effect if the weighted random sampler is NOT disabled. |
+| `--weight-power`, `--wp` | `1.0` | Controls the aggressiveness of the weighted random sampler for the training dataset. The weight is computed as $w_c = \left(\frac{1}{\mathrm{count}_c}\right)^p$ with $p$ being the weight power. Only has an effect if the weighted random sampler is enabled. |
 
 
 ### Example Commands
