@@ -13,16 +13,16 @@ macOS/Linux:
     source venv/bin/activate
 Windows (PowerShell):
     python -m venv venv
-    .\venv\Scripts\activate
+    .\venv\Scripts\Activate.ps1
 
 3. Install dependencies
     pip install -r requirements.txt
 
 4. Run
-    python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model "Choose from ['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34']" --model_path "PATH/TO/CHECKPOINT.pt"
+    python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
-    python demo/demo_cam.py --folder_path "..." --model "..." --model_path "..." --cam "Choose from ["gradcam", "plusplus", "eigen", "score", "layer"]" --layer "Choose from ['1', '2', '3', '4'] --output_path "PATH/TO/OUTPUTFOLDER"
+    python demo/demo_cam.py --folder_path "..." --model "..." --model_path "..." --cam gradcam --target_layer 4 --output_path "PATH/TO/OUTPUTFOLDER"
 '''
 
 import sys

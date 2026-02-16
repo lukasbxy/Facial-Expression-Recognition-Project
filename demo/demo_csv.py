@@ -1,4 +1,4 @@
-'''
+r'''
 Inference Script for iterating over a folder of images and writing the corresponding classification 
 scores to a CSV file.
 
@@ -12,13 +12,13 @@ macOS/Linux:
     source venv/bin/activate
 Windows (PowerShell):
     python -m venv venv
-    .\\venv\\Scripts\\Activate.ps1
+    .\venv\Scripts\Activate.ps1
 
 3. Install dependencies
     pip install -r requirements.txt
 
 4. Run
-    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model "Choose from ['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct']" --model_path "PATH/TO/CHECKPOINT.pt"
+    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
 
 Optional:
     python demo/demo_csv.py --folder_path "..." --model "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
