@@ -1,4 +1,4 @@
-# Python 3.12 (latest stable version as of January 2026)
+# Python 3.12
 
 torch==2.9.1
 torchvision
