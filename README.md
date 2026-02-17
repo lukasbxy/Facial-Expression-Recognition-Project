@@ -23,18 +23,9 @@ The goal of this project is to develop a deep learning system that automatically
 | Framework         | PyTorch                          |
 | Emotion Classes   | 6                                 |
 
-## Data Augmentation
+## Data
 
-Training data is augmented with these techniques:
-- Random Resized Crop (90-100%)
-- Random Rotation (±10°)
-- Random Horizontal Flip (50%)
-- Color Jitter (Brightness, Contrast, Saturation)
-- Random Erasing (2-10% of image)
-
-All parameters are configured in `config.yaml`.
-
-## Dataset Structure
+### Data Structure
 
 All images use a sequential naming scheme (`000001.jpg`, `000002.jpg`, ...) per emotion class.
 
@@ -59,7 +50,7 @@ dataset/
         └── validation_set/ (20%)
 ```
 
-### Dataset Sizes (dataset_full)
+#### Dataset Sizes (`dataset_full`)
 
 | Dataset                       | Training      | Validation  | Total       |
 |-------------------------------|---------------|-------------|-------------|
@@ -72,7 +63,7 @@ dataset/
 
 **Note:** Human-Face-Emotions does not contain a `4_disgust` class.
 
-### Emotion Labels and Distribution (Training, all datasets combined)
+#### Emotion Labels and Distribution (Training, all datasets combined)
 
 | Index | Emotion   | Training Images | Share |
 |-------|-----------|-----------------|-------|
@@ -87,6 +78,17 @@ dataset/
 **Note:** Due to the dominance of the Happiness class (52.2%), a class limit of e.g. 50,000 images per emotion is usually applied during training to prevent bias.
 
 **Note:** The dataset folder structure is preserved with `.gitkeep` files, but images must be downloaded separately from our Google Drive
+
+### Data Augmentation
+
+Training data is augmented with these techniques:
+- Random Resized Crop (90-100%)
+- Random Rotation (±10°)
+- Random Horizontal Flip (50%)
+- Color Jitter (Brightness, Contrast, Saturation)
+- Random Erasing (2-10% of image)
+
+All parameters are configured in `config.yaml`.
 
 ## Training
 
@@ -159,27 +161,31 @@ Training artifacts are saved in `runs/<ModelClass>/<timestamp>/`, including:
 - `checkpoints/best.pt` and `checkpoints/last.pt`
 - `confusion_matrices/` (frequency controlled by `--cm-every`)
 
-## Demo & Visualization 
+## Demo & Visualization
 The repository offers 5 different scripts for inference and visualization.
 ### Setup
 - Change into project directory
 - `python3.12 -m venv .venv`
 - macOS/Linux: `source .venv/bin/activate` | Windows: `.venv\Scripts\Activate.ps1`
 - `pip install -r requirements.txt`
-### demo_gui.py
-Interactive application for facial emotion recognition and visualization using Gradcam. Options include live Webcam inference and video import and export.  
-Full functionality is only given when checkpoints are present in the runs folder for ResNet18_SE_Variant. Only use with trusted checkpoints.  
+### Scripts
+
+#### `demo_gui.py`
+Interactive application for facial emotion recognition and visualization using Gradcam (webcam + video import/export).  
+**Compatible model:** `resnet18_se_variant` only (expects checkpoints in `runs/ResNet18_SE_Variant/<timestamp>/checkpoints/`).  
 
 **How to start:**
 ```bash
 python demo/demo_gui.py
 ```
-### activation_maximization.py 
+#### `activation_maximization.py`
 Script for performing  activation maximization to visualize what a given channel in a model is looking for.  
+**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`.  
 
 **How to start:**
  ```bash 
   python demo/activation_maximization.py \
+    --model "resnet18_se_variant" \
     --ckpt "PATH/TO/CHECKPOINT.pt" \
     --module "layer3.0" \
     --channels "0,2,4,8,16,32" \
@@ -187,11 +193,17 @@ Script for performing  activation maximization to visualize what a given channel
     --topk 150 \
     --outdir "PATH/TO/OUT/DIRECTORY"
 ```   
-**Options :**
-- `channels` specifies which channels to perform activation maximization on.
-- `outdir`specifies in which directory the images are saved.
-### demo_cam.py 
+**Options:**
+- `--model`: model architecture (`resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`).
+- `--ckpt`: path to the checkpoint (`.pt`) file (required).
+- `--module`: target module to maximize (e.g. `layer3.0`).
+- `--channels`: channel indices as comma-separated values (e.g. `0,2,4`) or `all`.
+- `--init_img`: optional initialization image path (otherwise random initialization is used).
+- `--topk`: number of strongest activations used for the objective (default: `100`).
+- `--outdir`: directory where generated images are saved.
+#### `demo_cam.py`
 Script for generating saliency heatmaps for all images in a given folder.  
+**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`.  
 Supported CAM Methods:
 - `GradCAM`: use as `gradcam`
 - `GradCAMPlusPlus` use as `plusplus`
@@ -205,7 +217,7 @@ python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se
 ```  
 
 **Options :**
-- `--model` supports all model variants of the repository
+- `--model` supports: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`
 - `--cam` supports the previously mentioned CAM methods
 - `--target_layer` applies CAM method to specified layer 
 - `--output_path` is used to specify output folder  
@@ -213,18 +225,20 @@ python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se
 This demo uses pytorch-grad-cam by Jacob Gildenblat:
 https://github.com/jacobgil/pytorch-grad-cam
 Licensed under MIT License.
-### demo_csv.py 
+#### `demo_csv.py`
 Inference Script for iterating over a folder of images and writing the corresponding classification scores to a CSV file.  
+**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`, `cct`.  
 
 **How to start:** 
 ```bash
 python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
 ```  
 **Options include:**
-- `--model`supports all model variants of the repository
+- `--model` supports: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`, `cct`
 - `--output_csv`specifies where to save the .csv file
-### visualize_model.py
-Script for generating architecture visualizations for the repository's supported models.  
+#### `visualize_model.py`
+Script for generating detailed block-level architecture diagrams of the supported ResNet18 family.  
+**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`.
   
 **How to start:**
  ```bash
