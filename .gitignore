@@ -1,10 +1,10 @@
 __MACOSX/*
 *.sbatch
 
-# Keep dataset folder structure placeholders
+# Keep dataset folder structure
 !dataset/**/.gitkeep
 
-# Ignore dataset images recursively
+# Ignore dataset images
 dataset/**/*.jpg
 dataset/**/*.jpeg
 dataset/**/*.png

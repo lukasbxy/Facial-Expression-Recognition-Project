@@ -67,19 +67,19 @@ CLAHE_TILE_GRID_SIZE = (8, 8)
 
 ```bash
 # Single image
-python preprocess_single_image.py image.jpg
+python data_processing/preprocess_single_image.py image.jpg
 
 # Multiple images
-python preprocess_single_image.py img1.jpg img2.jpg img3.jpg
+python data_processing/preprocess_single_image.py img1.jpg img2.jpg img3.jpg
 
 # Save as NumPy array
-python preprocess_single_image.py --numpy image.jpg
+python data_processing/preprocess_single_image.py --numpy image.jpg
 
 # Custom output directory
-python preprocess_single_image.py --output ./results image.jpg
+python data_processing/preprocess_single_image.py --output ./results image.jpg
 
 # With visualization
-python preprocess_single_image.py --visualize image.jpg
+python data_processing/preprocess_single_image.py --visualize image.jpg
 ```
 
 ---

@@ -2,10 +2,10 @@
 """
 Script to preprocess a single image before we feed it into the model.
 
-How to use:
-    python preprocess_single_image.py image.jpg
-    python preprocess_single_image.py --output ./results image.jpg
-    python preprocess_single_image.py --numpy image.jpg
+How to use (from project root):
+    python data_processing/preprocess_single_image.py image.jpg
+    python data_processing/preprocess_single_image.py --output ./results image.jpg
+    python data_processing/preprocess_single_image.py --numpy image.jpg
 
 It resizes to 64x64, converts to RGB, and normalizes to 0-1.
 """
@@ -159,4 +159,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

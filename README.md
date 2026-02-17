@@ -25,6 +25,10 @@ The goal of this project is to develop a deep learning system that automatically
 
 ## Data
 
+### Data Preprocessing
+
+The `data_processing/` folder contains the image preprocessing pipeline (CLAHE, resize to 64x64, etc.) that was used to process our datasets below. See `data_processing/preprocessing.md` for details.
+
 ### Data Structure
 
 All images use a sequential naming scheme (`000001.jpg`, `000002.jpg`, ...) per emotion class.
@@ -86,7 +90,7 @@ Training data is augmented with these techniques:
 - Random Rotation (±10°)
 - Random Horizontal Flip (50%)
 - Color Jitter (Brightness, Contrast, Saturation)
-- Random Erasing (2-10% of image)
+- Random Erasing (30% prob, 2-10% of image)
 
 All parameters are configured in `config.yaml`.
 
@@ -163,84 +167,81 @@ Training artifacts are saved in `runs/<ModelClass>/<timestamp>/`, including:
 
 ## Demo & Visualization
 The repository offers 5 different scripts for inference and visualization.
-### Setup
-- Change into project directory
-- `python3.12 -m venv .venv`
-- macOS/Linux: `source .venv/bin/activate` | Windows: `.venv\Scripts\Activate.ps1`
-- `pip install -r requirements.txt`
+Same setup as Training (venv + `pip install -r requirements.txt`).
+
 ### Scripts
 
 #### `demo_gui.py`
-Interactive application for facial emotion recognition and visualization using Gradcam (webcam + video import/export).  
-**Compatible model:** `resnet18_se_variant` only (expects checkpoints in `runs/ResNet18_SE_Variant/<timestamp>/checkpoints/`).  
+Interactive application for facial emotion recognition and GradCAM visualization with webcam or video input.
+**Compatible models:** `resnet18_se_variant` only.
 
 **How to start:**
 ```bash
 python demo/demo_gui.py
 ```
+**Options (in app):**
+- Checkpoint selector (expects checkpoints in `runs/ResNet18_SE_Variant/<timestamp>/checkpoints/`)
+- `Import` (load video), `Webcam` (live inference), `Export` (save result)
+
 #### `activation_maximization.py`
-Script for performing  activation maximization to visualize what a given channel in a model is looking for.  
-**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`.  
+Activation maximization script to visualize what specific channels respond to.
 
 **How to start:**
- ```bash 
-  python demo/activation_maximization.py \
-    --model "resnet18_se_variant" \
-    --ckpt "PATH/TO/CHECKPOINT.pt" \
-    --module "layer3.0" \
-    --channels "0,2,4,8,16,32" \
-    --init_img "PATH/TO/INITIAL/IMAGE" \
-    --topk 150 \
-    --outdir "PATH/TO/OUT/DIRECTORY"
-```   
+```bash
+python demo/activation_maximization.py \
+  --model "resnet18_se_variant" \
+  --ckpt "PATH/TO/CHECKPOINT.pt" \
+  --module "layer3.0" \
+  --channels "0,2,4,8,16,32" \
+  --init_img "PATH/TO/INITIAL/IMAGE" \
+  --topk 150 \
+  --outdir "PATH/TO/OUT/DIRECTORY"
+```
 **Options:**
 - `--model`: model architecture (`resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`).
-- `--ckpt`: path to the checkpoint (`.pt`) file (required).
 - `--module`: target module to maximize (e.g. `layer3.0`).
 - `--channels`: channel indices as comma-separated values (e.g. `0,2,4`) or `all`.
-- `--init_img`: optional initialization image path (otherwise random initialization is used).
+- `--init_img`: optional path to initial image (default: random noise).
 - `--topk`: number of strongest activations used for the objective (default: `100`).
-- `--outdir`: directory where generated images are saved.
+
 #### `demo_cam.py`
-Script for generating saliency heatmaps for all images in a given folder.  
-**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`.  
-Supported CAM Methods:
-- `GradCAM`: use as `gradcam`
-- `GradCAMPlusPlus` use as `plusplus`
-- `EigenCAM` use as `eigen`
-- `ScoreCAM` use as `score`
-- `LayerCAM`  use as `layer`
+Generate saliency heatmaps for all images in a folder. This demo uses `pytorch-grad-cam` by Jacob Gildenblat: https://github.com/jacobgil/pytorch-grad-cam (MIT).
 
 **How to start:**
 ```bash
-python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
-```  
+python demo/demo_cam.py \
+  --folder_path "PATH/TO/IMAGE/FOLDER" \
+  --model resnet18_se_variant \
+  --model_path "PATH/TO/CHECKPOINT.pt"
+```
+**Options:**
+- `--folder_path`: input image folder.
+- `--model`: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`.
+- `--model_path`: checkpoint path (`.pt`).
+- `--cam`: CAM method (`gradcam`, `plusplus`, `eigen`, `score`, `layer`).
+- `--target_layer`: target residual layer (`1`, `2`, `3`, `4`).
+- `--output_path`: output folder for generated heatmaps.
 
-**Options :**
-- `--model` supports: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`
-- `--cam` supports the previously mentioned CAM methods
-- `--target_layer` applies CAM method to specified layer 
-- `--output_path` is used to specify output folder  
-
-This demo uses pytorch-grad-cam by Jacob Gildenblat:
-https://github.com/jacobgil/pytorch-grad-cam
-Licensed under MIT License.
 #### `demo_csv.py`
-Inference Script for iterating over a folder of images and writing the corresponding classification scores to a CSV file.  
-**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`, `cct`.  
+Run inference on a folder of images and save class probabilities to a CSV file.
 
-**How to start:** 
-```bash
-python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
-```  
-**Options include:**
-- `--model` supports: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`, `cct`
-- `--output_csv`specifies where to save the .csv file
-#### `visualize_model.py`
-Script for generating detailed block-level architecture diagrams of the supported ResNet18 family.  
-**Compatible models:** `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`.
-  
 **How to start:**
- ```bash
- python demo/visualize_model.py --model resnet18
- ```
+```bash
+python demo/demo_csv.py \
+  --folder_path "PATH/TO/IMAGE/FOLDER" \
+  --model resnet18_se_variant \
+  --model_path "PATH/TO/CHECKPOINT.pt"
+```
+**Options:**
+- `--model`: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`, `cct`.
+- `--output_csv`: output CSV file path.
+
+#### `visualize_model.py`
+Generate detailed block-level architecture diagrams for supported ResNet18-family models.
+
+**How to start:**
+```bash
+python demo/visualize_model.py --model resnet18
+```
+**Options:**
+- `--model`: `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`.
