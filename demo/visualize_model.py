@@ -1,15 +1,11 @@
 """
-Generate detailed architecture diagrams for supported ResNet18 variants.
+Generate detailed block-level architecture diagrams for supported ResNet18-family models.
 
-Supported models:
-    - resnet18
-    - ResNet18_SE
-    - ResNet18_SE_Variant
-    - ResNet18_Variant
+Supported models: resnet18, resnet18_se, resnet18_variant, resnet18_se_variant
 
 Usage:
     python demo/visualize_model.py --model resnet18
-    python demo/visualize_model.py --model ResNet18_SE
+    python demo/visualize_model.py --model resnet18_se_variant
 """
 
 import argparse

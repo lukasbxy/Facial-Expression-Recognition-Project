@@ -1,30 +1,13 @@
-r"""
-Facial Expression Recognition GUI for live model inference
+"""
+Interactive GUI for facial emotion recognition and GradCAM visualization with webcam or video input.
+Requires tkinter. Compatible models: resnet18_se_variant only.
+Only use trusted checkpoints. Press Escape to leave full-screen mode.
 
-How to use:
+Usage:
+    python demo/demo_gui.py
 
-1. Change into project directory
-
-2. Create  and activate virtual environment
-
-macOS / Linux: 
-    python3 -m venv venv
-    source venv/bin/activate 
-Windows (PowerShell): 
-    python -m venv venv
-    .\venv\Scripts\Activate.ps1  
-
-3. Install requirements
-pip: pip install -r requirements.txt
-
-4. Start GUI
-python demo/demo_gui.py
-
-5. Press Escape to leave Full-Screen Mode
-
-IMPORTANT: If you import a checkpoint, make sure that it is in the right format, is in the right folder runs/ResNet18_SE_Variant/timestamp/checkpoints/*
-Only use trusted checkpoints as weights_only is set to false.
-
+Options (in app): Checkpoint selector (runs/ResNet18_SE_Variant/<timestamp>/checkpoints/),
+    Import (load video), Webcam (live inference), Export (save result)
 """
 from pathlib import Path
 import sys, threading

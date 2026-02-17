@@ -101,6 +101,8 @@ All parameters are configured in `config.yaml`.
 - macOS/Linux: `source .venv/bin/activate` | Windows: `.venv\Scripts\Activate.ps1`
 - `pip install -r requirements.txt`
 
+**macOS (Homebrew):** `demo_gui.py` requires tkinter. Install the tkinter-enabled Python via Homebrew, e.g. `brew install python-tk@3.12`.
+
 ### How It Works
 1. Choose a model with `--model` (see options below).
 2. Choose datasets with `--train-datasets` and `--val-datasets` (see options below).

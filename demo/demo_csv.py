@@ -1,28 +1,12 @@
-r'''
-Inference Script for iterating over a folder of images and writing the corresponding classification 
-scores to a CSV file.
+"""
+Run inference on a folder of images and save class probabilities to a CSV file.
 
-How to use:
-1. Change into project directory
+Supported models: resnet18, resnet18_se, resnet18_se_variant, resnet34, cct
 
-2. Create and activate a virtual environment
-
-macOS/Linux:
-    python3 -m venv venv
-    source venv/bin/activate
-Windows (PowerShell):
-    python -m venv venv
-    .\venv\Scripts\Activate.ps1
-
-3. Install dependencies
-    pip install -r requirements.txt
-
-4. Run
+Usage:
     python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
-
-Optional:
-    python demo/demo_csv.py --folder_path "..." --model "..." --model_path "..." --output_csv "PATH/TO/CSV_NAME"
-'''
+    python demo/demo_csv.py --folder_path "..." --model "..." --model_path "..." --output_csv "PATH/TO/OUTPUT.csv"
+"""
 
 
 

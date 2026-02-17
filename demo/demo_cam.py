@@ -1,29 +1,13 @@
-r'''
-Script for iterating over a folder of images and applying a CAM method to the images, then overlaying 
-the heatmap on the image and saving it in a  specified folder.
-Only use with trusted checkpoints, as weights_only is set to false to ensure compatability.
+"""
+Generate saliency heatmaps for all images in a folder using GradCAM or other CAM methods.
+Uses pytorch-grad-cam. Only use trusted checkpoints (weights_only is false).
 
-How to use:
-1. Change into project directory 
+Supported models: resnet18, resnet18_se, resnet18_se_variant, resnet34
 
-2. Create and activate a virtual environment
-
-macOS/Linux:
-    python3 -m venv venv
-    source venv/bin/activate
-Windows (PowerShell):
-    python -m venv venv
-    .\venv\Scripts\Activate.ps1
-
-3. Install dependencies
-    pip install -r requirements.txt
-
-4. Run
+Usage:
     python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
-
-Optional:
-    python demo/demo_cam.py --folder_path "..." --model "..." --model_path "..." --cam gradcam --target_layer 4 --output_path "PATH/TO/OUTPUTFOLDER"
-'''
+    python demo/demo_cam.py --folder_path "..." --model "..." --model_path "..." --cam gradcam --target_layer 4 --output_path "PATH/TO/OUTPUT"
+"""
 
 import sys
 import argparse
