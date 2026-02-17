@@ -74,7 +74,7 @@ def load_model(model_name,model_weights,device):
     return model
 
 
-def do_grad(model, model_weights, cam, layer, folder_path, output_path):
+def do_grad(model_name, model_weights, cam_method, layer, folder_path, output_path):
 
     cam_dict = {
         'gradcam': GradCAM,
@@ -91,7 +91,7 @@ def do_grad(model, model_weights, cam, layer, folder_path, output_path):
     else:
         device = torch.device('cpu')
 
-    model = load_model(model, model_weights, device)
+    model = load_model(model_name, model_weights, device)
 
     layer_dict = {
         '1': model.layer1,
@@ -102,10 +102,10 @@ def do_grad(model, model_weights, cam, layer, folder_path, output_path):
 
     target_layers = [layer_dict[layer][-1]]
 
-    if cam.lower() not in cam_dict:
-        raise ValueError(f"Unknown model: {cam}. Available: {list(cam_dict.keys())}")
+    if cam_method.lower() not in cam_dict:
+        raise ValueError(f"Unknown CAM method: {cam_method}. Available: {list(cam_dict.keys())}")
     
-    cam = cam_dict[cam.lower()](
+    cam = cam_dict[cam_method.lower()](
         model = model,
         target_layers= target_layers
     )
@@ -213,12 +213,12 @@ def main():
 
     try:
         do_grad(
-            model =args.model,
+            model_name=args.model,
             model_weights=args.model_path,
-            cam = args.cam,
-            layer= args.target_layer,
-            folder_path = args.folder_path, 
-            output_path = args.output_path
+            cam_method=args.cam,
+            layer=args.target_layer,
+            folder_path=args.folder_path, 
+            output_path=args.output_path
         )
     except Exception as e:
         print(f"Error: {str(e)}", file=sys.stderr)

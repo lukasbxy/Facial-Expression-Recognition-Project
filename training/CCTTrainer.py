@@ -396,7 +396,7 @@ class CCTTrainer:
                 best_val_acc = val_acc
                 self.save_model(self.checkpoints_path / self.best_model_filename, self.model, self.optimizer, epoch, best_val_acc)
             
-            self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, best_val_acc)
+            self.save_model(self.checkpoints_path / self.last_model_filename, self.model, self.optimizer, epoch, val_acc)
             
             # Log metrics in run
             self._log_metrics({
