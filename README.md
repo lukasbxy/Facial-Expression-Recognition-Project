@@ -207,7 +207,7 @@ python demo/activation_maximization.py \
 - `--topk`: number of strongest activations used for the objective (default: `100`).
 
 #### `demo_cam.py`
-Generate saliency heatmaps for all images in a folder. This demo uses `pytorch-grad-cam` by Jacob Gildenblat: https://github.com/jacobgil/pytorch-grad-cam (MIT).
+Generate saliency heatmaps for all images in a folder. This demo uses `pytorcAn evaluationh-grad-cam` by Jao evalateuate acob Gildenblat: https://github.com/jacobgil/pytorch-grad-cam (MIT).
 
 **How to start:**
 ```bash
@@ -247,3 +247,37 @@ python demo/visualize_model.py --model resnet18
 ```
 **Options:**
 - `--model`: `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`.
+
+#### `eval.py`
+An evaluation script to test a trained model performance on validation datasets with more detailed metrics and visualizations.
+
+**Output:**
+- Overall accuracy
+- Macro F1 score
+- Weighted F1 score
+- Precision, recall, and F1 per emotion class
+- Confusion matrices (raw counts and also normalized)
+- Per-class metrics visualization
+
+**How to start:**
+```bash
+python training/eval.py \
+  --model resnet18_se_variant \
+  --checkpoint "PATH/TO/CHECKPOINT.pt" \
+  --val-datasets affectnet fer2013 \
+  --batch-size 64 \
+  --output-dir results/
+```
+
+**Options:**
+- `--model`: model architecture (`resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`, `cct`).
+- `--checkpoint`: path to trained model checkpoint (required).
+- `--val-datasets`: one or more datasets to evaluate on (default: `all`). Available: `affectnet`, `fer2013`, `face_expression`, `human_emotions`, `raf_db`, `all`.
+- `--batch-size`: evaluation batch size (default: `32`).
+- `--output-dir`: directory to save evaluation results (default: same directory as checkpoint).
+
+**Outputs:**
+- `evaluation_report.txt`: summary metrics and detailed classification report
+- `confusion_matrix.png`: raw confusion matrix 
+- `confusion_matrix_norm.png`: normalized confusion matrix 
+- `per_class_metrics.png`: bar chart comparing precision, recall, and F1 per emotion
