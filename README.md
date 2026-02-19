@@ -216,7 +216,7 @@ python demo/activation_maximization.py \
 - `--topk`: number of strongest activations used for the objective (default: `100`).
 
 #### `demo_cam.py`
-Generate saliency heatmaps for all images in a folder. This demo uses `pytorcAn evaluationh-grad-cam` by Jao evalateuate acob Gildenblat: https://github.com/jacobgil/pytorch-grad-cam (MIT).
+Generate saliency heatmaps for all images in a folder. This demo uses `pytorch-grad-cam` by Jacob Gildenblat: https://github.com/jacobgil/pytorch-grad-cam (MIT).
 
 **How to start:**
 ```bash
