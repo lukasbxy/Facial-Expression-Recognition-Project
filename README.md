@@ -171,17 +171,6 @@ Training artifacts are saved in `runs/<ModelClass>/<timestamp>/`, including:
 The repository offers 5 different scripts for inference and visualization.
 Same setup as Training (venv + `pip install -r requirements.txt`).
 
-### Scripts
-
-**Scripts Table of Contents:**
-
-- [demo_gui.py](#demo_gui.py)
-- [activation_maximization.py](#activation_maximization.py)
-- [demo_cam.py](#demo_cam.py)
-- [demo_csv.py](#demo_csv.py)
-- [visualize_model.py](#visualize_model.py)
-- [eval.py](#eval.py)
-
 #### `demo_gui.py`
 Interactive application for facial emotion recognition and GradCAM visualization with webcam or video input.
 **Compatible models:** `resnet18_se_variant` only.
