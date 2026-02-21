@@ -123,6 +123,10 @@ Dataset_<Name>/
 - **Full / Sample:** Sample = 10% of Full (per emotion class and split)
 - Sample is a true subset of Full (every sample image exists identically in Full)
 
+### Class Limiting
+
+To prevent the model from becoming biased towards excessively large classes, a `class_limit` can be applied. For the training dataset, any class exceeding this numerical limit is capped exactly at this value by proportionally removing images across the different source datasets. The resulting percentage of retained images (*keep rate*) is calculated and then applied symmetrically to the validation set. This ensures that validation classes are scaled down by the exact same proportion as their training counterparts.
+
 ### Dataset Sizes (dataset_full)
 
 #### Dataset_AffectNet+ (212,027 images)
