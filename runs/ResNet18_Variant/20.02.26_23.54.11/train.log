@@ -1,0 +1,457 @@
+[2026-02-20 23:54:11] Logging initialized. Run directory: runs/ResNet18_Variant/20.02.26_23.54.11
+[2026-02-20 23:54:11] Using Device: cuda
+[2026-02-20 23:54:12] Trainer initialized.
+[2026-02-20 23:54:12] ==== Trainer Configuration: ====
+[2026-02-20 23:54:12]  num_epochs: 50
+[2026-02-20 23:54:12]  learning_rate: 0.001
+[2026-02-20 23:54:12]  weight_decay: 0.0001
+[2026-02-20 23:54:12]  train_datasets: ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
+[2026-02-20 23:54:12]  val_datasets: ['affectnet', 'fer2013', 'face_expression', 'human_emotions', 'raf_db']
+[2026-02-20 23:54:12]  cm_every: 1
+[2026-02-20 23:54:12]  use_scheduler: True
+[2026-02-20 23:54:12]  use_class_weights: True
+[2026-02-20 23:54:12]  class_limit: None
+[2026-02-20 23:54:12]  best_model_filename: best.pt
+[2026-02-20 23:54:12]  last_model_filename: last.pt
+[2026-02-20 23:54:12]  device: cuda
+[2026-02-20 23:54:12]  model.class: ResNet18_Variant
+[2026-02-20 23:54:12]  scheduler: OneCycleLR
+[2026-02-20 23:54:12]  optimizer: AdamW
+[2026-02-20 23:54:12]  early_stopping_patience: 10
+[2026-02-20 23:54:12]  use_weighted_sampler: False
+[2026-02-20 23:54:12]  weight_power: 1.0
+[2026-02-20 23:54:12] ================================
+[2026-02-20 23:54:12] Beginning training for ResNet18_Variant for 50 epochs.
+[2026-02-20 23:54:12] ------------------------------------------------------------
+[2026-02-20 23:56:58] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_001.png
+[2026-02-20 23:56:58] ──────────────────────────────────────────────────────────────────
+[2026-02-20 23:56:58] Epoch 1/50 Summary:
+[2026-02-20 23:56:58]   Train Loss: 1.4036 | Train Acc: 53.89%
+[2026-02-20 23:56:58]   Val Loss:   0.9385 | Val Acc:   64.20% | F1: 0.4533
+[2026-02-20 23:56:58]   LR: 0.000056
+[2026-02-20 23:56:58] ──────────────────────────────────────────────────────────────────
+[2026-02-20 23:56:58] Saved checkpoint (val_acc: 64.20%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-20 23:56:58] Saved checkpoint (val_acc: 64.20%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-20 23:59:46] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_002.png
+[2026-02-20 23:59:46] ──────────────────────────────────────────────────────────────────
+[2026-02-20 23:59:46] Epoch 2/50 Summary:
+[2026-02-20 23:59:46]   Train Loss: 1.1830 | Train Acc: 64.29%
+[2026-02-20 23:59:46]   Val Loss:   0.9460 | Val Acc:   66.11% | F1: 0.5078
+[2026-02-20 23:59:46]   LR: 0.000123
+[2026-02-20 23:59:46] ──────────────────────────────────────────────────────────────────
+[2026-02-20 23:59:46] Saved checkpoint (val_acc: 66.11%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-20 23:59:46] Saved checkpoint (val_acc: 66.11%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:02:36] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_003.png
+[2026-02-21 00:02:36] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:02:36] Epoch 3/50 Summary:
+[2026-02-21 00:02:36]   Train Loss: 1.1192 | Train Acc: 66.61%
+[2026-02-21 00:02:36]   Val Loss:   0.8232 | Val Acc:   69.36% | F1: 0.5403
+[2026-02-21 00:02:36]   LR: 0.000207
+[2026-02-21 00:02:36] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:02:36] Saved checkpoint (val_acc: 69.36%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:02:36] Saved checkpoint (val_acc: 69.36%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:05:25] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_004.png
+[2026-02-21 00:05:25] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:05:25] Epoch 4/50 Summary:
+[2026-02-21 00:05:25]   Train Loss: 1.0650 | Train Acc: 68.26%
+[2026-02-21 00:05:25]   Val Loss:   0.7313 | Val Acc:   72.58% | F1: 0.5687
+[2026-02-21 00:05:25]   LR: 0.000274
+[2026-02-21 00:05:25] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:05:25] Saved checkpoint (val_acc: 72.58%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:05:25] Saved checkpoint (val_acc: 72.58%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:08:14] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_005.png
+[2026-02-21 00:08:14] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:08:14] Epoch 5/50 Summary:
+[2026-02-21 00:08:14]   Train Loss: 1.0179 | Train Acc: 69.81%
+[2026-02-21 00:08:14]   Val Loss:   0.7540 | Val Acc:   72.40% | F1: 0.5690
+[2026-02-21 00:08:14]   LR: 0.000300
+[2026-02-21 00:08:14] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:08:14] Saved checkpoint (val_acc: 72.40%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:11:03] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_006.png
+[2026-02-21 00:11:03] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:11:03] Epoch 6/50 Summary:
+[2026-02-21 00:11:03]   Train Loss: 0.9716 | Train Acc: 71.43%
+[2026-02-21 00:11:03]   Val Loss:   0.7078 | Val Acc:   73.92% | F1: 0.5891
+[2026-02-21 00:11:03]   LR: 0.000300
+[2026-02-21 00:11:03] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:11:03] Saved checkpoint (val_acc: 73.92%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:11:03] Saved checkpoint (val_acc: 73.92%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:14:00] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_007.png
+[2026-02-21 00:14:00] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:14:00] Epoch 7/50 Summary:
+[2026-02-21 00:14:00]   Train Loss: 0.9327 | Train Acc: 72.52%
+[2026-02-21 00:14:00]   Val Loss:   0.6873 | Val Acc:   74.42% | F1: 0.5959
+[2026-02-21 00:14:00]   LR: 0.000299
+[2026-02-21 00:14:00] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:14:00] Saved checkpoint (val_acc: 74.42%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:14:00] Saved checkpoint (val_acc: 74.42%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:16:50] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_008.png
+[2026-02-21 00:16:50] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:16:50] Epoch 8/50 Summary:
+[2026-02-21 00:16:50]   Train Loss: 0.9004 | Train Acc: 73.38%
+[2026-02-21 00:16:50]   Val Loss:   0.6906 | Val Acc:   74.92% | F1: 0.6142
+[2026-02-21 00:16:50]   LR: 0.000297
+[2026-02-21 00:16:50] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:16:50] Saved checkpoint (val_acc: 74.92%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:16:50] Saved checkpoint (val_acc: 74.92%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:19:39] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_009.png
+[2026-02-21 00:19:39] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:19:39] Epoch 9/50 Summary:
+[2026-02-21 00:19:39]   Train Loss: 0.8723 | Train Acc: 74.31%
+[2026-02-21 00:19:39]   Val Loss:   0.6564 | Val Acc:   75.65% | F1: 0.6089
+[2026-02-21 00:19:39]   LR: 0.000294
+[2026-02-21 00:19:39] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:19:39] Saved checkpoint (val_acc: 75.65%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:19:39] Saved checkpoint (val_acc: 75.65%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:22:28] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_010.png
+[2026-02-21 00:22:28] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:22:28] Epoch 10/50 Summary:
+[2026-02-21 00:22:28]   Train Loss: 0.8474 | Train Acc: 75.00%
+[2026-02-21 00:22:28]   Val Loss:   0.6204 | Val Acc:   77.21% | F1: 0.6332
+[2026-02-21 00:22:28]   LR: 0.000291
+[2026-02-21 00:22:28] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:22:29] Saved checkpoint (val_acc: 77.21%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:22:29] Saved checkpoint (val_acc: 77.21%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:25:18] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_011.png
+[2026-02-21 00:25:18] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:25:18] Epoch 11/50 Summary:
+[2026-02-21 00:25:18]   Train Loss: 0.8215 | Train Acc: 75.55%
+[2026-02-21 00:25:18]   Val Loss:   0.6082 | Val Acc:   77.65% | F1: 0.6347
+[2026-02-21 00:25:18]   LR: 0.000287
+[2026-02-21 00:25:18] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:25:18] Saved checkpoint (val_acc: 77.65%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:25:18] Saved checkpoint (val_acc: 77.65%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:28:07] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_012.png
+[2026-02-21 00:28:07] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:28:07] Epoch 12/50 Summary:
+[2026-02-21 00:28:07]   Train Loss: 0.7991 | Train Acc: 76.29%
+[2026-02-21 00:28:07]   Val Loss:   0.6195 | Val Acc:   77.14% | F1: 0.6368
+[2026-02-21 00:28:07]   LR: 0.000282
+[2026-02-21 00:28:07] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:28:07] Saved checkpoint (val_acc: 77.14%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:30:57] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_013.png
+[2026-02-21 00:30:57] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:30:57] Epoch 13/50 Summary:
+[2026-02-21 00:30:57]   Train Loss: 0.7754 | Train Acc: 76.86%
+[2026-02-21 00:30:57]   Val Loss:   0.6163 | Val Acc:   77.28% | F1: 0.6453
+[2026-02-21 00:30:57]   LR: 0.000277
+[2026-02-21 00:30:57] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:30:57] Saved checkpoint (val_acc: 77.28%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:33:46] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_014.png
+[2026-02-21 00:33:46] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:33:46] Epoch 14/50 Summary:
+[2026-02-21 00:33:46]   Train Loss: 0.7534 | Train Acc: 77.56%
+[2026-02-21 00:33:46]   Val Loss:   0.5978 | Val Acc:   78.09% | F1: 0.6483
+[2026-02-21 00:33:46]   LR: 0.000271
+[2026-02-21 00:33:46] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:33:46] Saved checkpoint (val_acc: 78.09%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:33:46] Saved checkpoint (val_acc: 78.09%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:36:34] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_015.png
+[2026-02-21 00:36:34] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:36:34] Epoch 15/50 Summary:
+[2026-02-21 00:36:34]   Train Loss: 0.7275 | Train Acc: 78.04%
+[2026-02-21 00:36:34]   Val Loss:   0.5766 | Val Acc:   78.68% | F1: 0.6626
+[2026-02-21 00:36:34]   LR: 0.000265
+[2026-02-21 00:36:34] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:36:34] Saved checkpoint (val_acc: 78.68%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:36:35] Saved checkpoint (val_acc: 78.68%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:39:22] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_016.png
+[2026-02-21 00:39:22] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:39:22] Epoch 16/50 Summary:
+[2026-02-21 00:39:22]   Train Loss: 0.7100 | Train Acc: 78.59%
+[2026-02-21 00:39:22]   Val Loss:   0.5581 | Val Acc:   79.75% | F1: 0.6777
+[2026-02-21 00:39:22]   LR: 0.000258
+[2026-02-21 00:39:22] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:39:22] Saved checkpoint (val_acc: 79.75%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:39:22] Saved checkpoint (val_acc: 79.75%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:42:10] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_017.png
+[2026-02-21 00:42:10] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:42:10] Epoch 17/50 Summary:
+[2026-02-21 00:42:10]   Train Loss: 0.6855 | Train Acc: 79.18%
+[2026-02-21 00:42:10]   Val Loss:   0.5680 | Val Acc:   79.29% | F1: 0.6735
+[2026-02-21 00:42:10]   LR: 0.000250
+[2026-02-21 00:42:10] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:42:10] Saved checkpoint (val_acc: 79.29%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:44:58] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_018.png
+[2026-02-21 00:44:58] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:44:58] Epoch 18/50 Summary:
+[2026-02-21 00:44:58]   Train Loss: 0.6673 | Train Acc: 79.70%
+[2026-02-21 00:44:58]   Val Loss:   0.5677 | Val Acc:   78.95% | F1: 0.6649
+[2026-02-21 00:44:58]   LR: 0.000242
+[2026-02-21 00:44:58] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:44:58] Saved checkpoint (val_acc: 78.95%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:47:45] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_019.png
+[2026-02-21 00:47:45] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:47:45] Epoch 19/50 Summary:
+[2026-02-21 00:47:45]   Train Loss: 0.6474 | Train Acc: 80.19%
+[2026-02-21 00:47:45]   Val Loss:   0.5757 | Val Acc:   78.93% | F1: 0.6682
+[2026-02-21 00:47:45]   LR: 0.000234
+[2026-02-21 00:47:45] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:47:45] Saved checkpoint (val_acc: 78.93%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:50:33] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_020.png
+[2026-02-21 00:50:33] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:50:33] Epoch 20/50 Summary:
+[2026-02-21 00:50:33]   Train Loss: 0.6256 | Train Acc: 80.77%
+[2026-02-21 00:50:33]   Val Loss:   0.5203 | Val Acc:   81.39% | F1: 0.6987
+[2026-02-21 00:50:33]   LR: 0.000225
+[2026-02-21 00:50:33] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:50:33] Saved checkpoint (val_acc: 81.39%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:50:33] Saved checkpoint (val_acc: 81.39%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:53:21] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_021.png
+[2026-02-21 00:53:21] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:53:21] Epoch 21/50 Summary:
+[2026-02-21 00:53:21]   Train Loss: 0.6071 | Train Acc: 81.23%
+[2026-02-21 00:53:21]   Val Loss:   0.4984 | Val Acc:   82.02% | F1: 0.7114
+[2026-02-21 00:53:21]   LR: 0.000216
+[2026-02-21 00:53:21] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:53:21] Saved checkpoint (val_acc: 82.02%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 00:53:21] Saved checkpoint (val_acc: 82.02%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:56:11] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_022.png
+[2026-02-21 00:56:11] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:56:11] Epoch 22/50 Summary:
+[2026-02-21 00:56:11]   Train Loss: 0.5892 | Train Acc: 81.77%
+[2026-02-21 00:56:11]   Val Loss:   0.5144 | Val Acc:   81.49% | F1: 0.7021
+[2026-02-21 00:56:11]   LR: 0.000206
+[2026-02-21 00:56:11] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:56:11] Saved checkpoint (val_acc: 81.49%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 00:59:00] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_023.png
+[2026-02-21 00:59:00] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:59:00] Epoch 23/50 Summary:
+[2026-02-21 00:59:00]   Train Loss: 0.5684 | Train Acc: 82.30%
+[2026-02-21 00:59:00]   Val Loss:   0.5043 | Val Acc:   81.55% | F1: 0.7009
+[2026-02-21 00:59:00]   LR: 0.000196
+[2026-02-21 00:59:00] ──────────────────────────────────────────────────────────────────
+[2026-02-21 00:59:00] Saved checkpoint (val_acc: 81.55%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:01:48] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_024.png
+[2026-02-21 01:01:48] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:01:48] Epoch 24/50 Summary:
+[2026-02-21 01:01:48]   Train Loss: 0.5507 | Train Acc: 82.74%
+[2026-02-21 01:01:48]   Val Loss:   0.5038 | Val Acc:   81.77% | F1: 0.7049
+[2026-02-21 01:01:48]   LR: 0.000186
+[2026-02-21 01:01:48] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:01:48] Saved checkpoint (val_acc: 81.77%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:04:36] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_025.png
+[2026-02-21 01:04:36] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:04:36] Epoch 25/50 Summary:
+[2026-02-21 01:04:36]   Train Loss: 0.5336 | Train Acc: 83.22%
+[2026-02-21 01:04:36]   Val Loss:   0.4609 | Val Acc:   83.53% | F1: 0.7253
+[2026-02-21 01:04:36]   LR: 0.000176
+[2026-02-21 01:04:36] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:04:37] Saved checkpoint (val_acc: 83.53%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:04:37] Saved checkpoint (val_acc: 83.53%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:07:25] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_026.png
+[2026-02-21 01:07:25] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:07:25] Epoch 26/50 Summary:
+[2026-02-21 01:07:25]   Train Loss: 0.5179 | Train Acc: 83.50%
+[2026-02-21 01:07:25]   Val Loss:   0.4471 | Val Acc:   83.89% | F1: 0.7324
+[2026-02-21 01:07:25]   LR: 0.000166
+[2026-02-21 01:07:25] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:07:25] Saved checkpoint (val_acc: 83.89%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:07:25] Saved checkpoint (val_acc: 83.89%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:10:13] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_027.png
+[2026-02-21 01:10:13] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:10:13] Epoch 27/50 Summary:
+[2026-02-21 01:10:13]   Train Loss: 0.5019 | Train Acc: 83.97%
+[2026-02-21 01:10:13]   Val Loss:   0.4575 | Val Acc:   83.61% | F1: 0.7261
+[2026-02-21 01:10:13]   LR: 0.000155
+[2026-02-21 01:10:13] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:10:13] Saved checkpoint (val_acc: 83.61%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:13:01] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_028.png
+[2026-02-21 01:13:01] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:13:01] Epoch 28/50 Summary:
+[2026-02-21 01:13:01]   Train Loss: 0.4893 | Train Acc: 84.34%
+[2026-02-21 01:13:01]   Val Loss:   0.4609 | Val Acc:   83.45% | F1: 0.7288
+[2026-02-21 01:13:01]   LR: 0.000145
+[2026-02-21 01:13:01] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:13:01] Saved checkpoint (val_acc: 83.45%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:15:49] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_029.png
+[2026-02-21 01:15:49] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:15:49] Epoch 29/50 Summary:
+[2026-02-21 01:15:49]   Train Loss: 0.4727 | Train Acc: 84.68%
+[2026-02-21 01:15:49]   Val Loss:   0.4481 | Val Acc:   84.17% | F1: 0.7414
+[2026-02-21 01:15:49]   LR: 0.000134
+[2026-02-21 01:15:49] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:15:49] Saved checkpoint (val_acc: 84.17%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:15:49] Saved checkpoint (val_acc: 84.17%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:18:37] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_030.png
+[2026-02-21 01:18:37] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:18:37] Epoch 30/50 Summary:
+[2026-02-21 01:18:37]   Train Loss: 0.4593 | Train Acc: 85.09%
+[2026-02-21 01:18:37]   Val Loss:   0.4591 | Val Acc:   83.83% | F1: 0.7357
+[2026-02-21 01:18:37]   LR: 0.000124
+[2026-02-21 01:18:37] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:18:37] Saved checkpoint (val_acc: 83.83%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:21:25] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_031.png
+[2026-02-21 01:21:25] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:21:25] Epoch 31/50 Summary:
+[2026-02-21 01:21:25]   Train Loss: 0.4462 | Train Acc: 85.42%
+[2026-02-21 01:21:25]   Val Loss:   0.4347 | Val Acc:   84.55% | F1: 0.7405
+[2026-02-21 01:21:25]   LR: 0.000114
+[2026-02-21 01:21:25] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:21:25] Saved checkpoint (val_acc: 84.55%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:21:25] Saved checkpoint (val_acc: 84.55%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:24:13] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_032.png
+[2026-02-21 01:24:13] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:24:13] Epoch 32/50 Summary:
+[2026-02-21 01:24:13]   Train Loss: 0.4313 | Train Acc: 85.79%
+[2026-02-21 01:24:13]   Val Loss:   0.4264 | Val Acc:   84.96% | F1: 0.7474
+[2026-02-21 01:24:13]   LR: 0.000104
+[2026-02-21 01:24:13] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:24:13] Saved checkpoint (val_acc: 84.96%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:24:14] Saved checkpoint (val_acc: 84.96%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:27:02] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_033.png
+[2026-02-21 01:27:02] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:27:02] Epoch 33/50 Summary:
+[2026-02-21 01:27:02]   Train Loss: 0.4196 | Train Acc: 86.08%
+[2026-02-21 01:27:02]   Val Loss:   0.4210 | Val Acc:   85.23% | F1: 0.7488
+[2026-02-21 01:27:02]   LR: 0.000094
+[2026-02-21 01:27:02] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:27:02] Saved checkpoint (val_acc: 85.23%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:27:02] Saved checkpoint (val_acc: 85.23%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:29:50] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_034.png
+[2026-02-21 01:29:50] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:29:50] Epoch 34/50 Summary:
+[2026-02-21 01:29:50]   Train Loss: 0.4087 | Train Acc: 86.39%
+[2026-02-21 01:29:50]   Val Loss:   0.4251 | Val Acc:   85.06% | F1: 0.7505
+[2026-02-21 01:29:50]   LR: 0.000084
+[2026-02-21 01:29:50] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:29:50] Saved checkpoint (val_acc: 85.06%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:32:38] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_035.png
+[2026-02-21 01:32:38] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:32:38] Epoch 35/50 Summary:
+[2026-02-21 01:32:38]   Train Loss: 0.4011 | Train Acc: 86.51%
+[2026-02-21 01:32:38]   Val Loss:   0.4234 | Val Acc:   85.28% | F1: 0.7538
+[2026-02-21 01:32:38]   LR: 0.000075
+[2026-02-21 01:32:38] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:32:38] Saved checkpoint (val_acc: 85.28%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:32:38] Saved checkpoint (val_acc: 85.28%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:35:26] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_036.png
+[2026-02-21 01:35:26] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:35:26] Epoch 36/50 Summary:
+[2026-02-21 01:35:26]   Train Loss: 0.3879 | Train Acc: 86.96%
+[2026-02-21 01:35:26]   Val Loss:   0.4185 | Val Acc:   85.69% | F1: 0.7567
+[2026-02-21 01:35:26]   LR: 0.000066
+[2026-02-21 01:35:26] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:35:26] Saved checkpoint (val_acc: 85.69%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:35:27] Saved checkpoint (val_acc: 85.69%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:38:14] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_037.png
+[2026-02-21 01:38:14] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:38:14] Epoch 37/50 Summary:
+[2026-02-21 01:38:14]   Train Loss: 0.3776 | Train Acc: 87.25%
+[2026-02-21 01:38:14]   Val Loss:   0.4106 | Val Acc:   86.00% | F1: 0.7611
+[2026-02-21 01:38:14]   LR: 0.000058
+[2026-02-21 01:38:14] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:38:15] Saved checkpoint (val_acc: 86.00%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:38:15] Saved checkpoint (val_acc: 86.00%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:41:03] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_038.png
+[2026-02-21 01:41:03] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:41:03] Epoch 38/50 Summary:
+[2026-02-21 01:41:03]   Train Loss: 0.3676 | Train Acc: 87.51%
+[2026-02-21 01:41:03]   Val Loss:   0.4091 | Val Acc:   86.14% | F1: 0.7633
+[2026-02-21 01:41:03]   LR: 0.000050
+[2026-02-21 01:41:03] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:41:03] Saved checkpoint (val_acc: 86.14%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:41:03] Saved checkpoint (val_acc: 86.14%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:43:51] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_039.png
+[2026-02-21 01:43:51] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:43:51] Epoch 39/50 Summary:
+[2026-02-21 01:43:51]   Train Loss: 0.3591 | Train Acc: 87.68%
+[2026-02-21 01:43:51]   Val Loss:   0.4157 | Val Acc:   85.91% | F1: 0.7604
+[2026-02-21 01:43:51]   LR: 0.000042
+[2026-02-21 01:43:51] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:43:51] Saved checkpoint (val_acc: 85.91%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:46:39] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_040.png
+[2026-02-21 01:46:39] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:46:39] Epoch 40/50 Summary:
+[2026-02-21 01:46:39]   Train Loss: 0.3545 | Train Acc: 87.79%
+[2026-02-21 01:46:39]   Val Loss:   0.4160 | Val Acc:   85.98% | F1: 0.7627
+[2026-02-21 01:46:39]   LR: 0.000035
+[2026-02-21 01:46:39] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:46:39] Saved checkpoint (val_acc: 85.98%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:49:27] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_041.png
+[2026-02-21 01:49:27] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:49:27] Epoch 41/50 Summary:
+[2026-02-21 01:49:27]   Train Loss: 0.3475 | Train Acc: 88.06%
+[2026-02-21 01:49:27]   Val Loss:   0.4051 | Val Acc:   86.33% | F1: 0.7650
+[2026-02-21 01:49:27]   LR: 0.000029
+[2026-02-21 01:49:27] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:49:27] Saved checkpoint (val_acc: 86.33%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:49:28] Saved checkpoint (val_acc: 86.33%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:52:16] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_042.png
+[2026-02-21 01:52:16] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:52:16] Epoch 42/50 Summary:
+[2026-02-21 01:52:16]   Train Loss: 0.3420 | Train Acc: 88.24%
+[2026-02-21 01:52:16]   Val Loss:   0.4083 | Val Acc:   86.19% | F1: 0.7639
+[2026-02-21 01:52:16]   LR: 0.000023
+[2026-02-21 01:52:16] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:52:16] Saved checkpoint (val_acc: 86.19%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:55:05] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_043.png
+[2026-02-21 01:55:05] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:55:05] Epoch 43/50 Summary:
+[2026-02-21 01:55:05]   Train Loss: 0.3378 | Train Acc: 88.31%
+[2026-02-21 01:55:05]   Val Loss:   0.4076 | Val Acc:   86.46% | F1: 0.7678
+[2026-02-21 01:55:05]   LR: 0.000018
+[2026-02-21 01:55:05] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:55:05] Saved checkpoint (val_acc: 86.46%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:55:05] Saved checkpoint (val_acc: 86.46%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 01:57:53] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_044.png
+[2026-02-21 01:57:53] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:57:53] Epoch 44/50 Summary:
+[2026-02-21 01:57:53]   Train Loss: 0.3322 | Train Acc: 88.45%
+[2026-02-21 01:57:53]   Val Loss:   0.4023 | Val Acc:   86.53% | F1: 0.7675
+[2026-02-21 01:57:53]   LR: 0.000013
+[2026-02-21 01:57:53] ──────────────────────────────────────────────────────────────────
+[2026-02-21 01:57:53] Saved checkpoint (val_acc: 86.53%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 01:57:53] Saved checkpoint (val_acc: 86.53%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:00:41] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_045.png
+[2026-02-21 02:00:41] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:00:41] Epoch 45/50 Summary:
+[2026-02-21 02:00:41]   Train Loss: 0.3273 | Train Acc: 88.60%
+[2026-02-21 02:00:41]   Val Loss:   0.4165 | Val Acc:   86.19% | F1: 0.7642
+[2026-02-21 02:00:41]   LR: 0.000009
+[2026-02-21 02:00:41] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:00:41] Saved checkpoint (val_acc: 86.19%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:03:30] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_046.png
+[2026-02-21 02:03:30] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:03:30] Epoch 46/50 Summary:
+[2026-02-21 02:03:30]   Train Loss: 0.3241 | Train Acc: 88.70%
+[2026-02-21 02:03:30]   Val Loss:   0.4101 | Val Acc:   86.37% | F1: 0.7671
+[2026-02-21 02:03:30]   LR: 0.000006
+[2026-02-21 02:03:30] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:03:30] Saved checkpoint (val_acc: 86.37%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:06:18] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_047.png
+[2026-02-21 02:06:18] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:06:18] Epoch 47/50 Summary:
+[2026-02-21 02:06:18]   Train Loss: 0.3234 | Train Acc: 88.74%
+[2026-02-21 02:06:18]   Val Loss:   0.4179 | Val Acc:   86.22% | F1: 0.7645
+[2026-02-21 02:06:18]   LR: 0.000004
+[2026-02-21 02:06:18] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:06:18] Saved checkpoint (val_acc: 86.22%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:09:07] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_048.png
+[2026-02-21 02:09:07] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:09:07] Epoch 48/50 Summary:
+[2026-02-21 02:09:07]   Train Loss: 0.3202 | Train Acc: 88.77%
+[2026-02-21 02:09:07]   Val Loss:   0.4133 | Val Acc:   86.38% | F1: 0.7681
+[2026-02-21 02:09:07]   LR: 0.000002
+[2026-02-21 02:09:07] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:09:07] Saved checkpoint (val_acc: 86.38%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:11:55] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_049.png
+[2026-02-21 02:11:55] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:11:55] Epoch 49/50 Summary:
+[2026-02-21 02:11:55]   Train Loss: 0.3182 | Train Acc: 88.80%
+[2026-02-21 02:11:55]   Val Loss:   0.4087 | Val Acc:   86.47% | F1: 0.7682
+[2026-02-21 02:11:55]   LR: 0.000001
+[2026-02-21 02:11:55] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:11:55] Saved checkpoint (val_acc: 86.47%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:14:44] Confusion matrix saved at runs/ResNet18_Variant/20.02.26_23.54.11/confusion_matrices/20.02.26_23.54.11_ConfusionMatrices_ResNet18_Variant_epoch_050.png
+[2026-02-21 02:14:44] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:14:44] Epoch 50/50 Summary:
+[2026-02-21 02:14:44]   Train Loss: 0.3194 | Train Acc: 88.79%
+[2026-02-21 02:14:44]   Val Loss:   0.4072 | Val Acc:   86.55% | F1: 0.7707
+[2026-02-21 02:14:44]   LR: 0.000000
+[2026-02-21 02:14:44] ──────────────────────────────────────────────────────────────────
+[2026-02-21 02:14:44] Saved checkpoint (val_acc: 86.55%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/best.pt
+[2026-02-21 02:14:44] Saved checkpoint (val_acc: 86.55%) to runs/ResNet18_Variant/20.02.26_23.54.11/checkpoints/last.pt
+[2026-02-21 02:14:44] 
+============================================================
+[2026-02-21 02:14:44] Training complete.
