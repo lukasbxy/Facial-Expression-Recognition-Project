@@ -259,7 +259,7 @@ An evaluation script to test a trained model performance on validation datasets 
 
 **How to start:**
 ```bash
-python training/eval.py \
+python demo/eval.py \
   --model resnet18_se_variant \
   --checkpoint "PATH/TO/CHECKPOINT.pt" \
   --val-datasets affectnet fer2013 \
@@ -273,6 +273,7 @@ python training/eval.py \
 - `--val-datasets`: one or more datasets to evaluate on (default: `all`). Available: `affectnet`, `fer2013`, `face_expression`, `human_emotions`, `raf_db`, `all`.
 - `--batch-size`: evaluation batch size (default: `32`).
 - `--output-dir`: directory to save evaluation results (default: same directory as checkpoint).
+- Device is selected automatically with priority: `cuda` -> `mps` -> `cpu`.
 
 **Outputs:**
 - `evaluation_report.txt`: summary metrics and detailed classification report

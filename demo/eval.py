@@ -10,11 +10,11 @@ Computes:
 - Confusion matrix (both raw and normalized)
 
 Sample usage:
-python eval.py 
-    --model resnet18_se 
-    --checkpoint path/to/checkpoint.pth 
-    --val-datasets affectnet 
-    --batch-size 64 
+python demo/eval.py \
+    --model resnet18_variant \
+    --checkpoint PATH/TO/CHECKPOINT.pt \
+    --val-datasets affectnet \
+    --batch-size 64 \
     --output-dir results/
 
 """
@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 from pathlib import Path
+import sys
 import yaml
 import argparse
 import numpy as np
@@ -33,6 +34,10 @@ from sklearn.metrics import (
     f1_score,
     precision_recall_fscore_support
 )
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from training.load_data import get_dataloaders
 from models import ResNet18, ResNet18_SE, ResNet18_Variant, ResNet18_SE_Variant, ResNet34, CCT
@@ -131,8 +136,13 @@ def main():
     
     args = parser.parse_args()
 
-    # Device 
-    dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Device
+    if torch.cuda.is_available():
+        dev = torch.device('cuda')
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        dev = torch.device('mps')
+    else:
+        dev = torch.device('cpu')
     print(f"Device: {dev}")
 
     # Load config - emotions names
