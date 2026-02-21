@@ -217,7 +217,6 @@ python demo/demo_cam.py \
 **Options:**
 - `--folder_path`: input image folder.
 - `--model`: `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`.
-- `--model_path`: checkpoint path (`.pt`).
 - `--cam`: CAM method (`gradcam`, `plusplus`, `eigen`, `score`, `layer`).
 - `--target_layer`: target residual layer (`1`, `2`, `3`, `4`).
 - `--output_path`: output folder for generated heatmaps.
@@ -269,9 +268,7 @@ python demo/eval.py \
 
 **Options:**
 - `--model`: model architecture (`resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`, `cct`).
-- `--checkpoint`: path to trained model checkpoint (required).
 - `--val-datasets`: one or more datasets to evaluate on (default: `all`). Available: `affectnet`, `fer2013`, `face_expression`, `human_emotions`, `raf_db`, `all`.
-- `--batch-size`: evaluation batch size (default: `32`).
 - `--output-dir`: directory to save evaluation results (default: same directory as checkpoint).
 - Device is selected automatically with priority: `cuda` -> `mps` -> `cpu`.
 
