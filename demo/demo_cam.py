@@ -2,10 +2,10 @@
 Generate saliency heatmaps for all images in a folder using GradCAM or other CAM methods.
 Uses pytorch-grad-cam. Only use trusted checkpoints (weights_only is false).
 
-Supported models: resnet18, resnet18_se, resnet18_se_variant, resnet34
+Supported models: resnet18, resnet18_se, resnet18_variant, resnet18_se_variant, resnet34
 
 Usage:
-    python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
+    python demo/demo_cam.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_variant --model_path "PATH/TO/CHECKPOINT.pt"
     python demo/demo_cam.py --folder_path "..." --model "..." --model_path "..." --cam gradcam --target_layer 4 --output_path "PATH/TO/OUTPUT"
 """
 
@@ -24,7 +24,7 @@ from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34
+from models import ResNet18, ResNet18_SE, ResNet18_Variant, ResNet18_SE_Variant, ResNet34
 
 EMOTIONS = ["Happiness", "Surprise", "Sadness", "Anger", "Disgust", "Fear"]
 
@@ -39,6 +39,7 @@ def load_model(model_name,model_weights,device):
     model_dict = {
         'resnet18': ResNet18,
         'resnet18_se': ResNet18_SE,
+        'resnet18_variant': ResNet18_Variant,
         'resnet18_se_variant': ResNet18_SE_Variant,
         'resnet34': ResNet34
     }
@@ -158,8 +159,8 @@ def main():
     parser.add_argument(
         "--model",
         type = str,
-        default='resnet18_se_variant',
-        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34'],
+        default='resnet18_variant',
+        choices=['resnet18', 'resnet18_se', 'resnet18_variant', 'resnet18_se_variant', 'resnet34'],
         help = "Model selection",
     )
 

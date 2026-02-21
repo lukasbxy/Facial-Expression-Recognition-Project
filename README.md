@@ -115,8 +115,8 @@ All parameters are configured in `config.yaml`.
 |-------|--------|-----------------|
 | `resnet18` | ResNet | `0.001` / `0.0001` |
 | `resnet18_se` | ResNet | `0.001` / `0.0001` |
-| `resnet18_variant` | ResNet | `0.001` / `0.0001` |
-| `resnet18_se_variant` (default) | ResNet | `0.001` / `0.0001` |
+| `resnet18_variant` (default) | ResNet | `0.001` / `0.0001` |
+| `resnet18_se_variant` | ResNet | `0.001` / `0.0001` |
 | `resnet34` | ResNet | `0.001` / `0.0001` |
 | `cct` | Transformer (CCT) | `0.0005` / `0.05` |
 
@@ -173,14 +173,14 @@ Same setup as Training (venv + `pip install -r requirements.txt`).
 
 #### `demo_gui.py`
 Interactive application for facial emotion recognition and GradCAM visualization with webcam or video input.
-**Compatible models:** `resnet18_se_variant` only.
+**Compatible models:** `resnet18_variant` only.
 
 **How to start:**
 ```bash
 python demo/demo_gui.py
 ```
 **Options (in app):**
-- Checkpoint selector (expects checkpoints in `runs/ResNet18_SE_Variant/<timestamp>/checkpoints/`)
+- Checkpoint selector (expects checkpoints in `runs/ResNet18_Variant/<timestamp>/checkpoints/`)
 - `Import` (load video), `Webcam` (live inference), `Export` (save result)
 
 #### `activation_maximization.py`
@@ -189,7 +189,7 @@ Activation maximization script to visualize what specific channels respond to.
 **How to start:**
 ```bash
 python demo/activation_maximization.py \
-  --model "resnet18_se_variant" \
+  --model "resnet18_variant" \
   --ckpt "PATH/TO/CHECKPOINT.pt" \
   --module "layer3.0" \
   --channels "0,2,4,8,16,32" \
@@ -211,12 +211,12 @@ Generate saliency heatmaps for all images in a folder. This demo uses `pytorch-g
 ```bash
 python demo/demo_cam.py \
   --folder_path "PATH/TO/IMAGE/FOLDER" \
-  --model resnet18_se_variant \
+  --model resnet18_variant \
   --model_path "PATH/TO/CHECKPOINT.pt"
 ```
 **Options:**
 - `--folder_path`: input image folder.
-- `--model`: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`.
+- `--model`: `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`.
 - `--model_path`: checkpoint path (`.pt`).
 - `--cam`: CAM method (`gradcam`, `plusplus`, `eigen`, `score`, `layer`).
 - `--target_layer`: target residual layer (`1`, `2`, `3`, `4`).
@@ -229,11 +229,11 @@ Run inference on a folder of images and save class probabilities to a CSV file.
 ```bash
 python demo/demo_csv.py \
   --folder_path "PATH/TO/IMAGE/FOLDER" \
-  --model resnet18_se_variant \
+  --model resnet18_variant \
   --model_path "PATH/TO/CHECKPOINT.pt"
 ```
 **Options:**
-- `--model`: `resnet18`, `resnet18_se`, `resnet18_se_variant`, `resnet34`, `cct`.
+- `--model`: `resnet18`, `resnet18_se`, `resnet18_variant`, `resnet18_se_variant`, `resnet34`, `cct`.
 - `--output_csv`: output CSV file path.
 
 #### `visualize_model.py`
@@ -260,7 +260,7 @@ An evaluation script to test a trained model performance on validation datasets 
 **How to start:**
 ```bash
 python demo/eval.py \
-  --model resnet18_se_variant \
+  --model resnet18_variant \
   --checkpoint "PATH/TO/CHECKPOINT.pt" \
   --val-datasets affectnet fer2013 \
   --batch-size 64 \

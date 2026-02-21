@@ -127,7 +127,7 @@ def main():
         type=str,
         required=True,
         choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct', 'resnet18_variant'],
-        help='Select the model (default: resnet18_se_variant)'
+        help='Select the model architecture'
     )
     parser.add_argument('--checkpoint', type=str, required=True)
     parser.add_argument('--batch-size', type=int, default=32)

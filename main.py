@@ -43,9 +43,9 @@ def main():
     parser.add_argument(
         '--model',
         type=str,
-        default='resnet18_se_variant',
+        default='resnet18_variant',
         choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct', 'resnet18_variant'],
-        help='Select the model (default: resnet18_se_variant)'
+        help='Select the model (default: resnet18_variant)'
     )
     
     parser.add_argument(

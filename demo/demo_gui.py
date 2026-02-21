@@ -1,12 +1,12 @@
 """
 Interactive GUI for facial emotion recognition and GradCAM visualization with webcam or video input.
-Requires tkinter. Compatible models: resnet18_se_variant only.
+Requires tkinter. Compatible models: resnet18_variant only.
 Only use trusted checkpoints. Press Escape to leave full-screen mode.
 
 Usage:
     python demo/demo_gui.py
 
-Options (in app): Checkpoint selector (runs/ResNet18_SE_Variant/<timestamp>/checkpoints/),
+Options (in app): Checkpoint selector (runs/ResNet18_Variant/<timestamp>/checkpoints/),
     Import (load video), Webcam (live inference), Export (save result)
 """
 from pathlib import Path
@@ -20,7 +20,7 @@ import customtkinter as ctk
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
-from models import ResNet18_SE_Variant 
+from models import ResNet18_Variant
 EMOTIONS = ["Happiness", "Surprise", "Sadness", "Anger", "Disgust", "Fear"]
 COLORS = {"high": "#2d5a27", "mid": "#b58e24", "low": "#942121", "bg": "#1a1a1a"}
 if sys.platform.startswith("win"):
@@ -88,11 +88,11 @@ class App:
 
     def _get_checkpoints(self):
         """
-        Get checkpoints from runs/ResNet18_SE_Variant/timestamp/checkpoints/*
+        Get checkpoints from runs/ResNet18_Variant/timestamp/checkpoints/*
         """
         pts = []
         
-        runs_dir = PROJECT_ROOT / "runs" / "ResNet18_SE_Variant"
+        runs_dir = PROJECT_ROOT / "runs" / "ResNet18_Variant"
         if runs_dir.exists():
             timestamp_dirs = sorted([d for d in runs_dir.iterdir() if d.is_dir()], reverse=True)
             for timestamp_dir in timestamp_dirs:
@@ -107,7 +107,7 @@ class App:
         path = PROJECT_ROOT / self.ckpt_var.get()
         if not path.exists(): return
         try:
-            self.model = ResNet18_SE_Variant(num_classes=6)
+            self.model = ResNet18_Variant(num_classes=6)
             self.model.load_state_dict(torch.load(path, map_location=self.device, weights_only=False)['model_state'])
             self.model.to(self.device).eval()
             self.gradcam = GradCAM(self.model, self.model.layer4[-1])

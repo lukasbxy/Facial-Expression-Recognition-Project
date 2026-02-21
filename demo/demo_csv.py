@@ -1,10 +1,10 @@
 """
 Run inference on a folder of images and save class probabilities to a CSV file.
 
-Supported models: resnet18, resnet18_se, resnet18_se_variant, resnet34, cct
+Supported models: resnet18, resnet18_se, resnet18_variant, resnet18_se_variant, resnet34, cct
 
 Usage:
-    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_se_variant --model_path "PATH/TO/CHECKPOINT.pt"
+    python demo/demo_csv.py --folder_path "PATH/TO/IMAGE/FOLDER" --model resnet18_variant --model_path "PATH/TO/CHECKPOINT.pt"
     python demo/demo_csv.py --folder_path "..." --model "..." --model_path "..." --output_csv "PATH/TO/OUTPUT.csv"
 """
 
@@ -21,7 +21,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from models import ResNet18, ResNet18_SE, ResNet18_SE_Variant, ResNet34, CCT
+from models import ResNet18, ResNet18_SE, ResNet18_Variant, ResNet18_SE_Variant, ResNet34, CCT
 
 EMOTIONS = ["Happiness", "Surprise", "Sadness", "Anger", "Disgust", "Fear"]
 
@@ -34,6 +34,7 @@ def load_model(model_name, model_weights, device):
     model_dict = {
         'resnet18': ResNet18,
         'resnet18_se': ResNet18_SE,
+        'resnet18_variant': ResNet18_Variant,
         'resnet18_se_variant': ResNet18_SE_Variant,
         'resnet34': ResNet34,
         'cct': CCT
@@ -110,8 +111,8 @@ def main():
     parser.add_argument(
         "--model",
         type = str,
-        default='resnet18_se_variant',
-        choices=['resnet18', 'resnet18_se', 'resnet18_se_variant', 'resnet34', 'cct'],
+        default='resnet18_variant',
+        choices=['resnet18', 'resnet18_se', 'resnet18_variant', 'resnet18_se_variant', 'resnet34', 'cct'],
         help = "Model selection",
     )
 

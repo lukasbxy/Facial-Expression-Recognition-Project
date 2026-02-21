@@ -4,7 +4,7 @@ Script for performing  activation maximization to visualize what a given channel
 
 How to use: 
 python demo/activation_maximization.py \
-  --model "resnet18_se_variant" \
+  --model "resnet18_variant" \
   --ckpt "PATH/TO/CHECKPOINT" \
   --module "layer3.0" \
   --channels "0,2,4,8,16,32" \
@@ -374,7 +374,7 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="resnet18_se_variant",
+        default="resnet18_variant",
         help="Model name (resnet18, resnet18_se, resnet18_variant, resnet18_se_variant, resnet34)",
     )
     parser.add_argument("--ckpt", required=True, type=str)
